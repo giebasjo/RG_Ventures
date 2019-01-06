@@ -57,7 +57,7 @@ nba_stats_info = {"https://www.sportsbookreview.com/betting-odds/nba-basketball/
 # /html/body/div[3]/div/div/section/div/div/div[2]/div[2]/table
 
 # Define function to scrape nba stats
-def scrape_nba_odds(url, days_xpaths):
+def scrape_nba_odds(url, days_xpaths, num_months):
 	df_final = pd.DataFrame()
 
 	def populate(data, colnames, teamNames):
@@ -155,215 +155,235 @@ def scrape_nba_odds(url, days_xpaths):
 	except_ind = 0
 	switch_month_ind = 0
 
-	for day in days_xpaths:
+	for m in range(num_months):
 
-		if switch_month_ind == 1:
-			browser.find_element_by_xpath(switch_month).click();
-			time.sleep(2)
-		# t1 = time.process_time()
-		# some dates not available due to no games. cannot select in browser
-		try:
-			# select calendar			
-			if except_ind == 0:
-				browser.find_element_by_xpath(cal).click();
-			time.sleep(2)
-		
-			# select date
-			browser.find_element_by_xpath(day).click();
-			time.sleep(1)
+		for day in days_xpaths:
 
-			## Use the xpaths to click the necessary browswer buttons
-			for xpath in xpaths:
-				browser.find_element_by_xpath(xpath).click();
-				time.sleep(2)  # Sleep in between
+			# t1 = time.process_time()
+			# some dates not available due to no games. cannot select in browser
+			try:
 
+				if switch_month_ind == 1:
+					browser.find_element_by_xpath(switch_month).click();
+					time.sleep(2)
+			except:
+				print('ERROR switching month')
+				continue
 
+			# select calendar
+			try:		
+				if except_ind == 0:
+					browser.find_element_by_xpath(cal).click();
+				time.sleep(2)
+			except:
+				print('ERROR selecting calendar')
+				continue
 
-			## Populate containers
-			table = browser.find_element_by_id(object_id)
+			# select day from calendar
+			try:
+				browser.find_element_by_xpath(day).click();
+				time.sleep(3)
+			except:
+				print('ERROR selecting day')
+				continue
 
-			# lists
-			teamNames = ['Phoenix','Orlando','Washington','Detroit','Indiana','Atlanta',
-						'Toronto','Miami','Charlotte','Brooklyn','Cleveland','Memphis','Minnesota',
-						'Chicago','New Orleans','Dallas','Denver','San Antonio','Sacramento','L.A. Clippers',
-						'L.A. Lakers','Philadelphia','Boston', 'New York','Houston','Oklahoma City',
-						'Golden State','Utah','Portland','Milwaukee']
-
-			# Containers
-			GameID = []
-			Date = []
-			Teams = []
-			Points = []
-			Wagers = []
-			Opener = []
-			Pinnacle = []
-			Fivedimes = []
-			Bookmaker = []
-			BetOnline = []
-			Bovada = []
-			Heritage = []
-			Intertops = []
-			Youwager = []
-			Opener2 = []
-			Opener3 = []
-			Justbet = []
-			Sportsbetting = []
-			Gtbets = []
-			Sportbet = []
-			Opener4 = []
-			Nitrogensports = []
-			Betphoenix = []
-			Betmania = []
-			Skybook = []
-			Opener5 = []
-			Mybookie = []
-			Abcislands = []
-			Jazz = []
-			Sportsinteraction = []
-			Opener6 = []
-			Betcris = []
-			Sbr = []
-			Wagerweb = []
-			Thegreek = []
-			Opener7 = []
-			Bodog = []
-			Matchbook = []
-			Looselines = []
-			Bet365 = []
-
-			# grab data and run populate function
-			colnames = [GameID, Date, Teams, Points, Wagers, Opener, Pinnacle, Fivedimes, Bookmaker, BetOnline]
-			data = table.text.split("\n")[dp:]
-			pop = populate(data,colnames,teamNames)
+			# click on buttons (moneyline, full game)
+			try:
+				for xpath in xpaths:
+					browser.find_element_by_xpath(xpath).click();
+					time.sleep(2)
+			except:
+				print('ERROR selecting moneyline, full game, etc.')
+				continue
 			
-			if ' 01, ' in data[0]:
-				switch_month_ind = 1
-			else:
-				switch_month_ind = 0
 
-			# Create dataframe
-			dfout = pd.DataFrame(pop,
-								index= ['GameID', 'Date', 'Teams', 'Points', 'Wagers',
-										'Opener', 'Pinnacle', 'Fivedimes', 'Bookmaker', 'BetOnline']).T
+			# click arrows and run populate functions to create dfs
+			try:
+				table = browser.find_element_by_id(object_id)
 
-			# ------------------------------------
-			# redo process for next set of bookies
-			browser.find_element_by_xpath(click_arrow).click();
-			time.sleep(1)
-			table_after = browser.find_element_by_id(object_id)
+				# lists
+				teamNames = ['Phoenix','Orlando','Washington','Detroit','Indiana','Atlanta',
+							'Toronto','Miami','Charlotte','Brooklyn','Cleveland','Memphis','Minnesota',
+							'Chicago','New Orleans','Dallas','Denver','San Antonio','Sacramento','L.A. Clippers',
+							'L.A. Lakers','Philadelphia','Boston', 'New York','Houston','Oklahoma City',
+							'Golden State','Utah','Portland','Milwaukee']
 
-			# grab data and populate
-			colnames2 = [Opener2, Bovada, Heritage, Intertops, Youwager]
-			data_after = table_after.text.split("\n")
-			pop_after = populate_after_click(data_after,colnames2,teamNames)
+				# Containers
+				GameID = []
+				Date = []
+				Teams = []
+				Points = []
+				Wagers = []
+				Opener = []
+				Pinnacle = []
+				Fivedimes = []
+				Bookmaker = []
+				BetOnline = []
+				Bovada = []
+				Heritage = []
+				Intertops = []
+				Youwager = []
+				Opener2 = []
+				Opener3 = []
+				Justbet = []
+				Sportsbetting = []
+				Gtbets = []
+				Sportbet = []
+				Opener4 = []
+				Nitrogensports = []
+				Betphoenix = []
+				Betmania = []
+				Skybook = []
+				Opener5 = []
+				Mybookie = []
+				Abcislands = []
+				Jazz = []
+				Sportsinteraction = []
+				Opener6 = []
+				Betcris = []
+				Sbr = []
+				Wagerweb = []
+				Thegreek = []
+				Opener7 = []
+				Bodog = []
+				Matchbook = []
+				Looselines = []
+				Bet365 = []
 
-			# create dataframe
-			dfout_after = pd.DataFrame(pop_after,
-						    index= ['Opener2','Bovada', 'Heritage', 'Intertops', 'Youwager']).T
+				# grab data and run populate function
+				colnames = [GameID, Date, Teams, Points, Wagers, Opener, Pinnacle, Fivedimes, Bookmaker, BetOnline]
+				data = table.text.split("\n")[dp:]
+				pop = populate(data,colnames,teamNames)
+			
+				if ' 01, ' in data[0]:
+					switch_month_ind = 1
+				else:
+					switch_month_ind = 0
 
-			# concatenate to form master df
-			dfout = pd.concat([dfout, dfout_after], axis=1)
-			# ------------------------------------
-
-
-			# ------------------------------------
-			# redo process for next set of bookies
-			browser.find_element_by_xpath(click_arrow2).click();
-			time.sleep(1)
-			table_after2 = browser.find_element_by_id(object_id)
-
-			colnames3 = [Opener3, Justbet, Sportsbetting, Gtbets, Sportbet]
-			data_after2 = table_after2.text.split("\n")
-			pop_after2 = populate_after_click(data_after2,colnames3,teamNames)
-
-			# dataframe
-			dfout_after2 = pd.DataFrame(pop_after2,
-							index= ['Opener3','Justbet', 'Sportsbetting', 'Gtbets', 'Sportbet']).T
-
-			dfout = pd.concat([dfout, dfout_after2], axis=1)
-			# ------------------------------------
-
-
-			# ------------------------------------
-			# redo process for next set of bookies
-			browser.find_element_by_xpath(click_arrow2).click();
-			time.sleep(1)
-			table_after3 = browser.find_element_by_id(object_id)
-
-			colnames4 = [Opener4, Nitrogensports, Betphoenix, Betmania, Skybook]
-			data_after3 = table_after3.text.split("\n")
-			pop_after3 = populate_after_click(data_after3,colnames4,teamNames)
-
-			# dataframe
-			dfout_after3 = pd.DataFrame(pop_after3,
-							index= ['Opener4','Nitrogensports', 'Betphoenix', 'Betmania', 'Skybook']).T
-
-			dfout = pd.concat([dfout, dfout_after3], axis=1)
-			# ------------------------------------
-
-
-			# ------------------------------------
-			# redo process for next set of bookies
-			browser.find_element_by_xpath(click_arrow2).click();
-			time.sleep(1)
-			table_after4 = browser.find_element_by_id(object_id)
-
-			colnames5 = [Opener5, Mybookie, Abcislands, Jazz, Sportsinteraction]
-			data_after4 = table_after4.text.split("\n")
-			pop_after4 = populate_after_click(data_after4,colnames5,teamNames)
-
-			# dataframe
-			dfout_after4 = pd.DataFrame(pop_after4,
-							index= ['Opener5','Mybookie', 'Abcislands', 'Jazz', 'Sportsinteraction']).T
-
-			dfout = pd.concat([dfout, dfout_after4], axis=1)
-			# ------------------------------------
-
-
-			# ------------------------------------
-			# redo process for next set of bookies
-			browser.find_element_by_xpath(click_arrow2).click();
-			time.sleep(1)
-			table_after5 = browser.find_element_by_id(object_id)
-
-			colnames6 = [Opener6, Betcris, Sbr, Wagerweb, Thegreek]
-			data_after5 = table_after5.text.split("\n")
-			pop_after5 = populate_after_click(data_after5,colnames6,teamNames)
-
-			# dataframe
-			dfout_after5 = pd.DataFrame(pop_after5,
-							index= ['Opener6','Betcris', 'Sbr', 'Wagerweb', 'Thegreek']).T
-
-			dfout = pd.concat([dfout, dfout_after5], axis=1)
-			# ------------------------------------
+				# Create dataframe
+				dfout = pd.DataFrame(pop,
+									index= ['GameID', 'Date', 'Teams', 'Points', 'Wagers',
+											'Opener', 'Pinnacle', 'Fivedimes', 'Bookmaker', 'BetOnline']).T
 
 				# ------------------------------------
-			# redo process for next set of bookies
-			browser.find_element_by_xpath(click_arrow2).click();
-			time.sleep(1)
-			table_after6 = browser.find_element_by_id(object_id)
+				# redo process for next set of bookies
+				browser.find_element_by_xpath(click_arrow).click();
+				time.sleep(1)
+				table_after = browser.find_element_by_id(object_id)
 
-			colnames7 = [Opener7, Bodog, Matchbook, Looselines, Bet365]
-			data_after6 = table_after6.text.split("\n")
-			pop_after6 = populate_after_click(data_after6,colnames7,teamNames)
+				# grab data and populate
+				colnames2 = [Opener2, Bovada, Heritage, Intertops, Youwager]
+				data_after = table_after.text.split("\n")
+				pop_after = populate_after_click(data_after,colnames2,teamNames)
 
-			# dataframe
-			dfout_after6 = pd.DataFrame(pop_after6,
-							index= ['Opener7','Bodog', 'Matchbook', 'Looselines', 'Bet365']).T
+				# create dataframe
+				dfout_after = pd.DataFrame(pop_after,
+								index= ['Opener2','Bovada', 'Heritage', 'Intertops', 'Youwager']).T
 
-			dfout = pd.concat([dfout, dfout_after6], axis=1)
-			# ------------------------------------
+				# concatenate to form master df
+				dfout = pd.concat([dfout, dfout_after], axis=1)
+				# ------------------------------------
 
-			df_final = df_final.append(dfout)
-			except_ind = 0
+
+				# ------------------------------------
+				# redo process for next set of bookies
+				browser.find_element_by_xpath(click_arrow2).click();
+				time.sleep(1)
+				table_after2 = browser.find_element_by_id(object_id)
+
+				colnames3 = [Opener3, Justbet, Sportsbetting, Gtbets, Sportbet]
+				data_after2 = table_after2.text.split("\n")
+				pop_after2 = populate_after_click(data_after2,colnames3,teamNames)
+
+				# dataframe
+				dfout_after2 = pd.DataFrame(pop_after2,
+								index= ['Opener3','Justbet', 'Sportsbetting', 'Gtbets', 'Sportbet']).T
+
+				dfout = pd.concat([dfout, dfout_after2], axis=1)
+				# ------------------------------------
+
+
+				# ------------------------------------
+				# redo process for next set of bookies
+				browser.find_element_by_xpath(click_arrow2).click();
+				time.sleep(1)
+				table_after3 = browser.find_element_by_id(object_id)
+
+				colnames4 = [Opener4, Nitrogensports, Betphoenix, Betmania, Skybook]
+				data_after3 = table_after3.text.split("\n")
+				pop_after3 = populate_after_click(data_after3,colnames4,teamNames)
+
+				# dataframe
+				dfout_after3 = pd.DataFrame(pop_after3,
+								index= ['Opener4','Nitrogensports', 'Betphoenix', 'Betmania', 'Skybook']).T
+
+				dfout = pd.concat([dfout, dfout_after3], axis=1)
+				# ------------------------------------
+
+
+				# ------------------------------------
+				# redo process for next set of bookies
+				browser.find_element_by_xpath(click_arrow2).click();
+				time.sleep(1)
+				table_after4 = browser.find_element_by_id(object_id)
+
+				colnames5 = [Opener5, Mybookie, Abcislands, Jazz, Sportsinteraction]
+				data_after4 = table_after4.text.split("\n")
+				pop_after4 = populate_after_click(data_after4,colnames5,teamNames)
+
+				# dataframe
+				dfout_after4 = pd.DataFrame(pop_after4,
+								index= ['Opener5','Mybookie', 'Abcislands', 'Jazz', 'Sportsinteraction']).T
+
+				dfout = pd.concat([dfout, dfout_after4], axis=1)
+				# ------------------------------------
+
+
+				# ------------------------------------
+				# redo process for next set of bookies
+				browser.find_element_by_xpath(click_arrow2).click();
+				time.sleep(1)
+				table_after5 = browser.find_element_by_id(object_id)
+
+				colnames6 = [Opener6, Betcris, Sbr, Wagerweb, Thegreek]
+				data_after5 = table_after5.text.split("\n")
+				pop_after5 = populate_after_click(data_after5,colnames6,teamNames)
+
+				# dataframe
+				dfout_after5 = pd.DataFrame(pop_after5,
+								index= ['Opener6','Betcris', 'Sbr', 'Wagerweb', 'Thegreek']).T
+
+				dfout = pd.concat([dfout, dfout_after5], axis=1)
+				# ------------------------------------
+
+					# ------------------------------------
+				# redo process for next set of bookies
+				browser.find_element_by_xpath(click_arrow2).click();
+				time.sleep(1)
+				table_after6 = browser.find_element_by_id(object_id)
+
+				colnames7 = [Opener7, Bodog, Matchbook, Looselines, Bet365]
+				data_after6 = table_after6.text.split("\n")
+				pop_after6 = populate_after_click(data_after6,colnames7,teamNames)
+
+				# dataframe
+				dfout_after6 = pd.DataFrame(pop_after6,
+								index= ['Opener7','Bodog', 'Matchbook', 'Looselines', 'Bet365']).T
+
+				dfout = pd.concat([dfout, dfout_after6], axis=1)
+				# ------------------------------------
+
+				df_final = df_final.append(dfout)
+				except_ind = 0
 		
-			# doesn't count sleep time - pretty fast if we can lower sleep time
-			# t2 = time.process_time()
-			# print('Time Elapsed:', t2-t1, 'seconds')
-		except:
-			print('ERROR loading data')
-			except_ind = 1
-			time.sleep(1)
+				# doesn't count sleep time - pretty fast if we can lower sleep time
+				# t2 = time.process_time()
+				# print('Time Elapsed:', t2-t1, 'seconds')
+			except:
+				print('ERROR clicking arrows or running populate functions')
+				except_ind = 1
+				time.sleep(1)
+				continue
 
 
 	browser.quit()
