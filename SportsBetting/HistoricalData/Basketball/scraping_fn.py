@@ -27,19 +27,18 @@ import time
 import os
 
 from multiprocessing import current_process
+import threading
 
 """
 Create directory to store data in 
 """
 
-td = datetime.today().strftime('%m_%d_%Y'); path = "./" + td + "/"
-os.system( "mkdir {}".format(td) )
+#td = datetime.today().strftime('%m_%d_%Y'); path = "./" + td + "/"
+#os.system( "mkdir {}".format(td) )
 
 """
 NBA.COM/STATS SCRAPE
 """
-
-print("\n ====== NBA.com/stats SCRAPING ====== \n")
 
 # Define dictionary for all url parsing
 nba_stats_info = {"http://stats.nba.com/players/usage/": \
@@ -126,7 +125,7 @@ nba_stats_info = {"http://stats.nba.com/players/usage/": \
 
 
 # Define function to scrape nba stats
-def scrape_nba_stats(url):
+def scrape_nba_stats( url, res_con, idx ):
     print("URL: ", url)
 
     def populate_2(data, stat_args, player_names, player_stats):
@@ -158,17 +157,17 @@ def scrape_nba_stats(url):
     fn = nba_stats_info[url][5]
 
     ## Set up chrome driver, open browser
-    path_to_chromedriver = "./web_scraping/chromedriver"
+    path_to_chromedriver = "/Users/jordangiebas/SideProjects/RGV/SportsBetting/HistoricalData/web_scraping/chromedriver"
     browser = webdriver.Chrome(executable_path=path_to_chromedriver)
     browser.get(url);
-    time.sleep(4)  ## make sure the browswer loads before executing xpaths
+    time.sleep(60)  ## make sure the browswer loads before executing xpaths
     
     ## Use the xpaths to click the necessary browswer buttons
     for xpath in xpaths:
         browser.find_element_by_xpath(xpath).click();
-        time.sleep(4)  # Sleep in between
+        time.sleep(10)  # Sleep in between
         
-    print( "current process: ", current_process(), "Selected all XPATHs" )
+    print( "current process: ", threading.current_thread().name, "Selected all XPATHs" )
 
     ## Populate containers
     table = browser.find_element_by_class_name(class_name)
@@ -192,5 +191,6 @@ def scrape_nba_stats(url):
             df[col] = [j[i - 1] for j in player_stats]
 
     browser.quit()
+    res_con[idx] = df
 
-    return df
+    return True
