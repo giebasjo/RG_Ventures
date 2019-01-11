@@ -7,10 +7,7 @@ Description:
 
     1. Scrape
         a. sportsbookreview.com/betting-odds/nba-basketball/money-line
-    2. Merge all data together as master_df
-    3. Create Directory ./{today's date}
-        a. Store individual data sources to ./{today's date}/individual_srcs
-        b. Store master dataframe to ./{today's date}/main
+    2. Merge all data together as master_df - create "historical database"
 
 """
 
@@ -23,18 +20,14 @@ from selenium import webdriver
 from datetime import datetime
 import time
 import os
+import logging
 
 from multiprocessing import current_process
 from datetime import date, timedelta
 
-"""
-Create directory to store data in 
-"""
-
-td = datetime.today().strftime('%m_%d_%Y'); path = "./" + td + "/"
-os.system( "mkdir {}".format(td) )
-
-print("\n ====== sportsbooksreview.com/betting-odds/nba-basketball SCRAPING ====== \n")
+# setup logs
+logging.basicConfig(filename='nba_odds_scraping.log',level=logging.INFO)
+logging.info("\n ====== sportsbooksreview.com/betting-odds/nba-basketball SCRAPING ====== \n")
 
 # Define dictionary for all url parsing
 # select full game
@@ -49,12 +42,6 @@ nba_stats_info = {"https://www.sportsbookreview.com/betting-odds/nba-basketball/
                   3,\
 					"/html/body/div/div/div/div/section/div/div[3]/div[2]/div[3]/div[3]/div[1]/div/div",\
 					"html/body/div/div/div/div/section/div/div[3]/div[2]/div[3]/div[2]/div/div/div[2]"]}
-
-# calendar
-# /html/body/div/div/div/div/section/div/div[2]/div/div[1]/span[5]
-
-# body of calendar
-# /html/body/div[3]/div/div/section/div/div/div[2]/div[2]/table
 
 # Define function to scrape nba stats
 def scrape_nba_odds(url, days_xpaths, num_months):
@@ -99,7 +86,7 @@ def scrape_nba_odds(url, days_xpaths, num_months):
 				if odds_count % 2 == 0 and bookie_count < 4:
 					bookie_count +=1
 
-		print('Scraping', dt, '................')
+		logging.info('Scraping', dt, '........')
 				
 		return colnames
 
@@ -151,37 +138,54 @@ def scrape_nba_odds(url, days_xpaths, num_months):
 	cal = '/html/body/div/div/div/div/section/div/div[2]/div/div/span'
 	switch_month = '/html/body/div[5]/div/div/section/div/div/div[2]/div[1]/div/a[2]'
 
+
+	except_ind = 0
+	#switch_month_ind = 0
+
 	for m in range(num_months):
+
+		browser.get(url);
+		time.sleep(2)  ## make sure the browswer loads before executing xpaths
 		if m > 0:
-			if except_ind == 0:
-				browser.find_element_by_xpath(cal).click();
-				time.sleep(2)
+			browser.find_element_by_xpath(cal).click();
+		
+		for month_switch in range(m):
 			browser.find_element_by_xpath(switch_month).click();
 			time.sleep(2)
 
-		except_ind = 0	
 		for day in days_xpaths:
-		
-			# t1 = time.process_time()
-			# some dates not available due to no games. cannot select in browser
-			try:
-				# select calendar			
-				if except_ind == 0 and m == 0:
+
+			# select calendar
+			try:		
+				if except_ind == 0:
 					browser.find_element_by_xpath(cal).click();
 				time.sleep(2)
-			
-				# select date
-				browser.find_element_by_xpath(day).click();
-				time.sleep(1)
+			except:
+				logging.info('ERROR selecting calendar')
+				continue
 
-				## Use the xpaths to click the necessary browswer buttons
+			# select day from calendar
+			try:
+				browser.find_element_by_xpath(day).click();
+				time.sleep(2)
+			except:
+				logging.info('ERROR selecting day')
+				except_ind = 1
+				continue
+
+			# click on buttons (moneyline, full game)
+			try:
 				for xpath in xpaths:
 					browser.find_element_by_xpath(xpath).click();
-					time.sleep(2)  # Sleep in between
+					time.sleep(2)
+			except:
+				logging.info('ERROR selecting moneyline, full game, etc.')
+				except_ind = 1
+				continue
+			
 
-
-
-				## Populate containers
+			# click arrows and run populate functions to create dfs
+			try:
 				table = browser.find_element_by_id(object_id)
 
 				# lists
@@ -237,6 +241,11 @@ def scrape_nba_odds(url, days_xpaths, num_months):
 				colnames = [GameID, Date, Teams, Points, Wagers, Opener, Pinnacle, Fivedimes, Bookmaker, BetOnline]
 				data = table.text.split("\n")[dp:]
 				pop = populate(data,colnames,teamNames)
+			
+				#if ' 01, ' in data[0]:
+				#	switch_month_ind = 1
+				#else:
+				#	switch_month_ind = 0
 
 				# Create dataframe
 				dfout = pd.DataFrame(pop,
@@ -256,7 +265,7 @@ def scrape_nba_odds(url, days_xpaths, num_months):
 
 				# create dataframe
 				dfout_after = pd.DataFrame(pop_after,
-							    index= ['Opener2','Bovada', 'Heritage', 'Intertops', 'Youwager']).T
+								index= ['Opener2','Bovada', 'Heritage', 'Intertops', 'Youwager']).T
 
 				# concatenate to form master df
 				dfout = pd.concat([dfout, dfout_after], axis=1)
@@ -350,17 +359,18 @@ def scrape_nba_odds(url, days_xpaths, num_months):
 
 				dfout = pd.concat([dfout, dfout_after6], axis=1)
 				# ------------------------------------
-	
+
 				df_final = df_final.append(dfout)
 				except_ind = 0
-			
+		
 				# doesn't count sleep time - pretty fast if we can lower sleep time
 				# t2 = time.process_time()
 				# print('Time Elapsed:', t2-t1, 'seconds')
 			except:
-				print('ERROR loading data')
-				except_ind = 1
+				logging.info('ERROR clicking arrows or running populate functions')
+				except_ind = 0
 				time.sleep(1)
+				continue
 
 
 	browser.quit()
