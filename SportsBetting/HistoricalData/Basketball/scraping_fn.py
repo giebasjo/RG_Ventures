@@ -17,15 +17,13 @@ Description:
 """
 
 # Import necessary modules
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns; sns.set()
+import pandas as pd; import numpy as np
+import matplotlib.pyplot as plt; import seaborn as sns; sns.set()
 from selenium import webdriver
-from datetime import datetime
-import time
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
+from datetime import datetime; import time
 import os
-
 from multiprocessing import current_process
 import threading
 
@@ -125,7 +123,7 @@ nba_stats_info = {"http://stats.nba.com/players/usage/": \
 
 
 # Define function to scrape nba stats
-def scrape_nba_stats( url, res_con, idx ):
+def scrape_nba_stats( url, res_con, idx, headless=True ):
     print("URL: ", url)
 
     def populate_2(data, stat_args, player_names, player_stats):
@@ -156,16 +154,34 @@ def scrape_nba_stats( url, res_con, idx ):
     dp = nba_stats_info[url][4]
     fn = nba_stats_info[url][5]
 
-    ## Set up chrome driver, open browser
-    path_to_chromedriver = "/Users/jordangiebas/SideProjects/RGV/SportsBetting/HistoricalData/web_scraping/chromedriver"
-    browser = webdriver.Chrome(executable_path=path_to_chromedriver)
+    if headless == True:
+
+        ## Set the chrome options to operate headless-ly
+        chrome_ops = Options()
+        chrome_ops.add_argument( "--headless" )
+        chrome_ops.binary_location = "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary"
+
+        ## Set up chrome driver, open browser
+        path_to_chromedriver = "/Users/jordangiebas/SideProjects/RGV/SportsBetting/HistoricalData/chromedriver"
+        browser = webdriver.Chrome( executable_path=path_to_chromedriver, chrome_options=chrome_ops )
+
+    else:
+
+        ## Set up chrome driver, open browser
+        path_to_chromedriver = "/Users/jordangiebas/SideProjects/RGV/SportsBetting/HistoricalData/chromedriver"
+        browser = webdriver.Chrome( executable_path=path_to_chromedriver )
+
     browser.get(url);
-    time.sleep(60)  ## make sure the browswer loads before executing xpaths
+    time.sleep(30)  ## make sure the browswer loads before executing xpaths
     
     ## Use the xpaths to click the necessary browswer buttons
-    for xpath in xpaths:
+    for j, xpath in enumerate( xpaths ):
         browser.find_element_by_xpath(xpath).click();
-        time.sleep(10)  # Sleep in between
+
+        print( "Thread {} fetched xpath {} of {}".format(threading.current_thread().name, \
+                                                         j+1, len(xpaths)) )
+
+        time.sleep(20)  # Sleep in between
         
     print( "current process: ", threading.current_thread().name, "Selected all XPATHs" )
 
