@@ -162,13 +162,13 @@ def scrape_nba_stats( url, res_con, idx, headless=True ):
         chrome_ops.binary_location = "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary"
 
         ## Set up chrome driver, open browser
-        path_to_chromedriver = "/Users/jordangiebas/SideProjects/RGV/SportsBetting/HistoricalData/chromedriver"
+        path_to_chromedriver = "/home/richie10181/NBA_project/web_scraping/chromedriver"
         browser = webdriver.Chrome( executable_path=path_to_chromedriver, chrome_options=chrome_ops )
 
     else:
 
         ## Set up chrome driver, open browser
-        path_to_chromedriver = "/Users/jordangiebas/SideProjects/RGV/SportsBetting/HistoricalData/chromedriver"
+        path_to_chromedriver = "/home/richie10181/NBA_project/web_scraping/chromedriver"
         browser = webdriver.Chrome( executable_path=path_to_chromedriver )
 
     browser.get(url);

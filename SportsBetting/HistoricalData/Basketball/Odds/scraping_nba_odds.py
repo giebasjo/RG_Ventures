@@ -86,7 +86,7 @@ def scrape_nba_odds(url, days_xpaths, num_months):
 				if odds_count % 2 == 0 and bookie_count < 4:
 					bookie_count +=1
 
-		logging.info('Scraping', dt, '........')
+		logging.info('Scraping %s.....', dt)
 				
 		return colnames
 
