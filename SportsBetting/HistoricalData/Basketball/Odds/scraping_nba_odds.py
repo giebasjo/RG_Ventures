@@ -44,7 +44,7 @@ nba_stats_info = {"https://www.sportsbookreview.com/betting-odds/nba-basketball/
 					"html/body/div/div/div/div/section/div/div[3]/div[2]/div[3]/div[2]/div/div/div[2]"]}
 
 # Define function to scrape nba stats
-def scrape_nba_odds(url, days_xpaths, num_months):
+def scrape_nba_odds(url, days_xpaths, num_months_begin, num_months_end):
 	df_final = pd.DataFrame()
 
 	def populate(data, colnames, teamNames):
@@ -142,16 +142,17 @@ def scrape_nba_odds(url, days_xpaths, num_months):
 	except_ind = 0
 	#switch_month_ind = 0
 
-	for m in range(num_months):
+	for m in range(num_months_begin, num_months_end):
 
 		browser.get(url);
 		time.sleep(2)  ## make sure the browswer loads before executing xpaths
 		if m > 0:
 			browser.find_element_by_xpath(cal).click();
+			except_ind = 1
 		
 		for month_switch in range(m):
 			browser.find_element_by_xpath(switch_month).click();
-			time.sleep(2)
+			time.sleep(1)
 
 		for day in days_xpaths:
 
@@ -159,7 +160,7 @@ def scrape_nba_odds(url, days_xpaths, num_months):
 			try:		
 				if except_ind == 0:
 					browser.find_element_by_xpath(cal).click();
-				time.sleep(2)
+				time.sleep(1)
 			except:
 				logging.info('ERROR selecting calendar')
 				continue
@@ -167,7 +168,7 @@ def scrape_nba_odds(url, days_xpaths, num_months):
 			# select day from calendar
 			try:
 				browser.find_element_by_xpath(day).click();
-				time.sleep(2)
+				time.sleep(1)
 			except:
 				logging.info('ERROR selecting day')
 				except_ind = 1
@@ -177,7 +178,7 @@ def scrape_nba_odds(url, days_xpaths, num_months):
 			try:
 				for xpath in xpaths:
 					browser.find_element_by_xpath(xpath).click();
-					time.sleep(2)
+					time.sleep(1)
 			except:
 				logging.info('ERROR selecting moneyline, full game, etc.')
 				except_ind = 1
