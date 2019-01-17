@@ -2,12 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="cc388f6d-a7db-4d39-8e65-ba68ac7971b6" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/HistoricalData/Basketball/iterative_driver.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/HistoricalData/Basketball/parallel_driver.py" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/HistoricalData/Basketball/Odds/web_scraping/chromedriver" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/HistoricalData/web_scraping/chromedriver" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/HistoricalData/Basketball/driver.py" afterPath="$PROJECT_DIR$/HistoricalData/Basketball/driver.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/HistoricalData/Basketball/scraping_fn.py" afterPath="$PROJECT_DIR$/HistoricalData/Basketball/scraping_fn.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -34,8 +29,8 @@
       <file leaf-file-name="driver.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/HistoricalData/Basketball/driver.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="190">
-              <caret line="10" column="0" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="27" selection-end-column="0" />
+            <state relative-caret-position="228">
+              <caret line="12" column="36" lean-forward="false" selection-start-line="12" selection-start-column="36" selection-end-line="12" selection-end-column="36" />
               <folding>
                 <element signature="e#0#56#0" expanded="true" />
               </folding>
@@ -92,16 +87,15 @@
       <list>
         <option value="$PROJECT_DIR$/HistoricalData/Basketball/headless_app/testing_headless_app.py" />
         <option value="$PROJECT_DIR$/HistoricalData/Basketball/scraping_fn.py" />
-        <option value="$PROJECT_DIR$/HistoricalData/Basketball/driver.py" />
         <option value="$PROJECT_DIR$/HistoricalData/Basketball/parallel_driver.py" />
         <option value="$PROJECT_DIR$/HistoricalData/Basketball/iterative_driver.py" />
+        <option value="$PROJECT_DIR$/HistoricalData/Basketball/driver.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="y" value="23" />
     <option name="width" value="1280" />
-    <option name="height" value="777" />
+    <option name="height" value="800" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -172,6 +166,7 @@
   <component name="PropertiesComponent">
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="reference.settingsdialog.IDE.editor.colors.Font" />
+    <property name="FullScreen" value="true" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -315,7 +310,7 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="23" width="1280" height="777" extended-state="6" />
+    <frame x="0" y="0" width="1280" height="800" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1365105" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
@@ -463,8 +458,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/HistoricalData/Basketball/driver.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="190">
-          <caret line="10" column="0" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="27" selection-end-column="0" />
+        <state relative-caret-position="228">
+          <caret line="12" column="36" lean-forward="false" selection-start-line="12" selection-start-column="36" selection-end-line="12" selection-end-column="36" />
           <folding>
             <element signature="e#0#56#0" expanded="true" />
           </folding>
