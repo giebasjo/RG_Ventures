@@ -144,15 +144,25 @@ def scrape_nba_odds(url, days_xpaths, num_months_begin, num_months_end):
 
 	for m in range(num_months_begin, num_months_end):
 
-		browser.get(url);
-		time.sleep(2)  ## make sure the browswer loads before executing xpaths
-		if m > 0:
-			browser.find_element_by_xpath(cal).click();
-			except_ind = 1
-		
+		try:
+			browser.get(url);
+			time.sleep(2)  ## make sure the browswer loads before executing xpaths
+			if m > 0:
+				browser.find_element_by_xpath(cal).click();
+				except_ind = 1
+		except:
+			logging.info('ERROR opening browser or initially selecting calendar')
+			continue
+
+
 		for month_switch in range(m):
-			browser.find_element_by_xpath(switch_month).click();
-			time.sleep(1)
+			try:
+				browser.find_element_by_xpath(switch_month).click();
+				time.sleep(1)
+
+			except:
+				logging.info('ERROR switching month')
+				continue
 
 		for day in days_xpaths:
 
