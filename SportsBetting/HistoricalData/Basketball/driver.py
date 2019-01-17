@@ -10,7 +10,7 @@ for idx, url in enumerate( urls[:5] + urls[6:] ):
 
 
 # for idx, url in enumerate( urls[:5] + urls[6:] ):
-#     # We start one thread per url present.
+#     # We start one thread per u   rl present.
 #     process = Thread( target=scrape_nba_stats, args=[url, results, idx, True], name="t{}".format(idx+1) )
 #     process.start()
 #     threads.append(process)
