@@ -47,7 +47,7 @@ nba_stats_info = {"https://www.sportsbookreview.com/betting-odds/nba-basketball/
 def scrape_nba_odds(url, days_xpaths, num_months_begin, num_months_end):
 	df_final = pd.DataFrame()
 
-	def populate(data, colnames, teamNames):
+	def populate(data, colnames, teamNames, num_month):
 		game_id = 0
 		team_count = 0
 		odds_count = 0
@@ -71,9 +71,15 @@ def scrape_nba_odds(url, days_xpaths, num_months_begin, num_months_end):
 
 			# to account for overtime games, increment to the "wager" field
 			# and then count backward to get total points
-			if elm[-1] == "%" and data[idx-1][-1] == "%":
-				colnames[3].append(data[idx-3])
-				colnames[3].append(data[idx-2])
+			# control for non-reporting of wager % before March 12, 2014
+			if num_month < 58:
+				if elm[-1] == "%" and data[idx-1][-1] == "%":
+					colnames[3].append(data[idx-3])
+					colnames[3].append(data[idx-2])
+			else:
+				if elm[-1] == "-" and data[idx-1][-1] == "-":
+					colnames[3].append(data[idx-3])
+					colnames[3].append(data[idx-2])
 		
 			if elm[-1] == "%":
 				colnames[4].append(elm)
@@ -251,7 +257,7 @@ def scrape_nba_odds(url, days_xpaths, num_months_begin, num_months_end):
 				# grab data and run populate function
 				colnames = [GameID, Date, Teams, Points, Wagers, Opener, Pinnacle, Fivedimes, Bookmaker, BetOnline]
 				data = table.text.split("\n")[dp:]
-				pop = populate(data,colnames,teamNames)
+				pop = populate(data,colnames,teamNames,m)
 			
 				#if ' 01, ' in data[0]:
 				#	switch_month_ind = 1
