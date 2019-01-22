@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 """
 
 Author: Rosenbaum, Richard
@@ -49,7 +51,7 @@ alpha = 0.05
 min_number_odds = 12
 
 # how many outliers to remove (i.e. 2 means remove highest 2 and lowest 2 odds supplied)
-num_outliers = 3
+num_outliers = 0
 # --------------- INPUTS ---------------
 
 # DONT CHANGE
@@ -83,10 +85,14 @@ def scrape(urls, alpha, min_number_odds, num_outliers):
 			# to account for overtime games, increment to the "wager" field
 			# and then count backward to get total points
 			# control for non-reporting of wager % before March 12, 2014
-			if elm[-1] == "-" and data[idx-1][-1] == "-":
-				colnames[3].append(data[idx-3])
-				colnames[3].append(data[idx-2])
-		
+			
+			#if elm[-1] == "-" and data[idx-1][-1] == "-":
+			#	colnames[3].append(data[idx-3])
+			#	colnames[3].append(data[idx-2])
+			
+			# games that haven't started will not have points			
+			colnames[3].append(0)
+
 			if elm[-1] == "%":
 				colnames[4].append(elm)
 			
@@ -132,7 +138,7 @@ def scrape(urls, alpha, min_number_odds, num_outliers):
 	def scrape_one(url):
 		df_final = pd.DataFrame()
 		browser.get(url);
-		time.sleep(3)
+		time.sleep(1)
 		table = browser.find_element_by_id(tables[0])
 		teamNames = ['Phoenix','Orlando','Washington','Detroit','Indiana','Atlanta',
 					'Toronto','Miami','Charlotte','Brooklyn','Cleveland','Memphis','Minnesota',
@@ -140,7 +146,8 @@ def scrape(urls, alpha, min_number_odds, num_outliers):
 					'L.A. Lakers','Philadelphia','Boston', 'New York','Houston','Oklahoma City',
 					'Golden State','Utah','Portland','Milwaukee']
 		
-		click_arrow = "/html/body/div/div/div/div/section/div/div[3]/div[2]/div[3]/div[3]/div[1]/div/div"
+		#click_arrow = "/html/body/div/div/div/div/section/div/div[3]/div[2]/div[3]/div[3]/div[1]/div/div"
+		click_arrow = '/html/body/div/div/div/div/section/div/div[3]/div[2]/div[3]/div[2]/div/div/div'
 		click_arrow2 = "/html/body/div/div/div/div/section/div/div[3]/div[2]/div[3]/div[2]/div/div/div[2]"
 
 		# if games have already started, need to go one more row down
@@ -383,30 +390,30 @@ def scrape(urls, alpha, min_number_odds, num_outliers):
 				avg_odds = np.mean(sl_sub)
 				max_odds = np.max(sl_sub)
 				
-				if max(sl_sub) - min(sl_sub) < 260:
-				    probs_tmp = []
-				    for odds in sl_sub:
-				        # calculate implied probabilities using odds
-				        if int(odds) > 0:
-				            probs_tmp.append(1/(1 + int(odds)/100))
-				        else:
-				            probs_tmp.append((-int(odds)/100)/(1-int(odds)/100))
-
-				    # calculate max prob
-				    if int(max_odds) > 0:
-				        max_prob_l.append(1/(1 + int(max_odds)/100))
+				#if max(sl_sub) - min(sl_sub) < 260:
+				probs_tmp = []
+				for odds in sl_sub:
+				    # calculate implied probabilities using odds
+				    if int(odds) > 0:
+				        probs_tmp.append(1/(1 + int(odds)/100))
 				    else:
-				        max_prob_l.append((-int(max_odds)/100)/(1-int(max_odds)/100))
+				        probs_tmp.append((-int(odds)/100)/(1-int(odds)/100))
 
-				    avg_odds_l.append(avg_odds)
-				    avg_prob_l.append(np.mean(probs_tmp))
-				    max_odds_l.append(max_odds)
-				
+				# calculate max prob
+				if int(max_odds) > 0:
+				    max_prob_l.append(1/(1 + int(max_odds)/100))
 				else:
-				    avg_odds_l.append(0)
-				    avg_prob_l.append(0)
-				    max_odds_l.append(0)
-				    max_prob_l.append(0)
+				    max_prob_l.append((-int(max_odds)/100)/(1-int(max_odds)/100))
+
+				avg_odds_l.append(avg_odds)
+				avg_prob_l.append(np.mean(probs_tmp))
+				max_odds_l.append(max_odds)
+		
+				#else:
+				#    avg_odds_l.append(0)
+				#    avg_prob_l.append(0)
+				#    max_odds_l.append(0)
+				#    max_prob_l.append(0)
 
 			else:
 				avg_odds_l.append(0)
@@ -452,8 +459,9 @@ def scrape(urls, alpha, min_number_odds, num_outliers):
 		kelly_bet_winnings = kelly_bet_size * np.array(bets_subset['Payout_if_Win'])
 
 		if len(bets_subset) > 0:
-			print('URGENT')
-			print('*********************** ENTER INTO POSITION NOW ***********************')
+			print('OUTCOME: ENTER POSITION')
+		else:
+			print('OUTCOME: no signal')
 
 		bets_subset.to_csv(path + '/Positive_Signals/' + str(now) + '.csv', sep=',')
 
