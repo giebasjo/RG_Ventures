@@ -32,6 +32,8 @@ from datetime import date, timedelta, datetime
 
 td = datetime.today().strftime('%m_%d_%Y'); path = "./" + td + "/"
 os.system( "mkdir {}".format(td) )
+os.system( "cd {}".format(td) )
+os.system( "mkdir {}".format('Positive_Signals'))
 
 
 #urls = ["https://www.sportsbookreview.com/betting-odds/nba-basketball/money-line",
@@ -42,11 +44,18 @@ os.system( "mkdir {}".format(td) )
 urls = ["https://www.sportsbookreview.com/betting-odds/nba-basketball/money-line"]
 tables = ["bettingOddsGridContainer"]
 alpha = 0.05
+
+# minimum number of bookies supplying odds. fewer odds than the number below will be excluded
+min_number_odds = 12
+
+# how many outliers to remove (i.e. 2 means remove highest 2 and lowest 2 odds supplied)
+num_outliers = 3
 # --------------- INPUTS ---------------
 
+# DONT CHANGE
 begin_index = 18
 
-def scrape(urls, alpha):
+def scrape(urls, alpha, min_number_odds, num_outliers):
 
 	# initial populate function
 	def populate(data, colnames, teamNames):
@@ -123,7 +132,7 @@ def scrape(urls, alpha):
 	def scrape_one(url):
 		df_final = pd.DataFrame()
 		browser.get(url);
-		time.sleep(1)
+		time.sleep(3)
 		table = browser.find_element_by_id(tables[0])
 		teamNames = ['Phoenix','Orlando','Washington','Detroit','Indiana','Atlanta',
 					'Toronto','Miami','Charlotte','Brooklyn','Cleveland','Memphis','Minnesota',
@@ -329,6 +338,7 @@ def scrape(urls, alpha):
 		return df_final
 
 
+
 	## Set up chrome driver, open browser
 	path_to_chromedriver = "./web_scraping/chromedriver"
 	browser = webdriver.Chrome(executable_path=path_to_chromedriver)
@@ -352,6 +362,63 @@ def scrape(urls, alpha):
 		# remove unnamed column
 		data = data.drop(['Opener2','Opener3', 'Opener4','Opener5','Opener6','Opener7'],axis=1)
 		
+		
+		# calculate average odds of all bookies
+		avg_odds_l = []
+		avg_prob_l = []
+		max_odds_l = []
+		max_prob_l = []
+
+		for i in range(len(data)):
+		
+			# sort odds in each row
+			sl = np.sort([int(x) for x in data.iloc[i,7:34].values if x != '-'])[::-1]
+
+			# remove top 2 and bottom 2 values (avoid outliers and data issues)
+			sl_sub = sl[num_outliers:len(sl)-num_outliers]
+
+			# calculate average odds of 24 remaining bookies
+			# only append new odds/probs if x bookies give odds
+			if len(sl_sub) > min_number_odds:
+				avg_odds = np.mean(sl_sub)
+				max_odds = np.max(sl_sub)
+				
+				if max(sl_sub) - min(sl_sub) < 260:
+				    probs_tmp = []
+				    for odds in sl_sub:
+				        # calculate implied probabilities using odds
+				        if int(odds) > 0:
+				            probs_tmp.append(1/(1 + int(odds)/100))
+				        else:
+				            probs_tmp.append((-int(odds)/100)/(1-int(odds)/100))
+
+				    # calculate max prob
+				    if int(max_odds) > 0:
+				        max_prob_l.append(1/(1 + int(max_odds)/100))
+				    else:
+				        max_prob_l.append((-int(max_odds)/100)/(1-int(max_odds)/100))
+
+				    avg_odds_l.append(avg_odds)
+				    avg_prob_l.append(np.mean(probs_tmp))
+				    max_odds_l.append(max_odds)
+				
+				else:
+				    avg_odds_l.append(0)
+				    avg_prob_l.append(0)
+				    max_odds_l.append(0)
+				    max_prob_l.append(0)
+
+			else:
+				avg_odds_l.append(0)
+				avg_prob_l.append(0)
+				max_odds_l.append(0)
+				max_prob_l.append(0)
+		
+		# append computed odds and probabilities to dataframe
+		data['Average_Odds'] = avg_odds_l
+		data['Average_Probs'] = avg_prob_l
+		data['Max_Odds'] = max_odds_l
+		data['Max_Implied_Prob'] = max_prob_l
 
 		# calculate expectations and signals
 		data['Consensus_Minus_Alpha'] = data['Average_Probs'] - alpha
@@ -364,7 +431,9 @@ def scrape(urls, alpha):
 		data['Payout_if_Win'] = payout
 
 		# add expected value of each bet - this will be numerator of kelly
-		expectation = [data.iloc[i,43]*data.iloc[i,41]+ (-1)*(1-data.iloc[i,41]) for i in range(len(data))]
+		expectation = np.array(data['Consensus_Minus_Alpha']) * np.array(data['Payout_if_Win']) -\
+						np.array(1) * (np.array(1) - np.array(data['Consensus_Minus_Alpha']))
+		#expectation = [data.iloc[i,43]*data.iloc[i,41]+ (-1)*(1-data.iloc[i,41]) for i in range(len(data))]
 		data['Expected_Value'] = expectation
 
 		# export cleaned data
@@ -393,7 +462,7 @@ def scrape(urls, alpha):
 
 
 if __name__ == '__main__':
-	scrape(urls, alpha)
+	scrape(urls, alpha, min_number_odds, num_outliers)
 
 
 
