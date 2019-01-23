@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 """
 
 Author: Rosenbaum, Richard
@@ -28,14 +26,20 @@ import logging
 import math
 import scipy.stats
 from sklearn.linear_model import LinearRegression
+import schedule
 
 from multiprocessing import current_process
 from datetime import date, timedelta, datetime
 
 td = datetime.today().strftime('%m_%d_%Y'); path = "./" + td + "/"
-os.system( "mkdir {}".format(td) )
-os.system( "cd {}".format(td) )
-os.system( "mkdir {}".format('Positive_Signals'))
+
+try:
+	os.system( "mkdir {}".format('./Data_Files/'+td) )
+	os.system( "mkdir {}".format('./Data_Files/Positive_Signals'))
+except:
+	pass
+#os.system( "cd {}".format(td) )
+
 
 
 #urls = ["https://www.sportsbookreview.com/betting-odds/nba-basketball/money-line",
@@ -148,7 +152,10 @@ def scrape(urls, alpha, min_number_odds, num_outliers):
 		
 		#click_arrow = "/html/body/div/div/div/div/section/div/div[3]/div[2]/div[3]/div[3]/div[1]/div/div"
 		click_arrow = '/html/body/div/div/div/div/section/div/div[3]/div[2]/div[3]/div[2]/div/div/div'
-		click_arrow2 = "/html/body/div/div/div/div/section/div/div[3]/div[2]/div[3]/div[2]/div/div/div[2]"
+		click_arrow2 = '/html/body/div/div/div/div/section/div/div[3]/div[2]/div[3]/div[2]/div/div/div[2]'
+		
+		click_morning = '/html/body/div/div/div/div/section/div/div[3]/div[2]/div[3]/div[3]/div/div/div'
+		click_morning2 = '/html/body/div/div/div/div/section/div/div[3]/div[2]/div[3]/div[2]/div/div/div[2]'
 
 		# if games have already started, need to go one more row down
 		click_arrow_after_start = "/html/body/div/div/div/div/section/div/div[3]/div[2]/div[4]/div[3]/div/div/div"
@@ -211,9 +218,12 @@ def scrape(urls, alpha, min_number_odds, num_outliers):
 		# ------------------------------------
 		# redo process for next set of bookies
 		try:
-			browser.find_element_by_xpath(click_arrow).click();
+			browser.find_element_by_xpath(click_morning).click();
 		except:
-			browser.find_element_by_xpath(click_arrow_after_start).click();
+			try: 
+				browser.find_element_by_xpath(click_arrow).click();
+			except:
+				browser.find_element_by_xpath(click_arrow_after_start).click();
 
 		time.sleep(1)
 		table_after = browser.find_element_by_id(tables[0])
@@ -235,9 +245,12 @@ def scrape(urls, alpha, min_number_odds, num_outliers):
 		# ------------------------------------
 		# redo process for next set of bookies
 		try:
-			browser.find_element_by_xpath(click_arrow2).click();
+			browser.find_element_by_xpath(click_morning2).click();
 		except:
-			browser.find_element_by_xpath(click_arrow_after_start2).click();
+			try:
+				browser.find_element_by_xpath(click_arrow2).click();
+			except:
+				browser.find_element_by_xpath(click_arrow_after_start2).click();
 
 		time.sleep(1)
 		table_after2 = browser.find_element_by_id(tables[0])
@@ -257,9 +270,12 @@ def scrape(urls, alpha, min_number_odds, num_outliers):
 		# ------------------------------------
 		# redo process for next set of bookies
 		try:
-			browser.find_element_by_xpath(click_arrow2).click();
+			browser.find_element_by_xpath(click_morning2).click();
 		except:
-			browser.find_element_by_xpath(click_arrow_after_start2).click();
+			try:
+				browser.find_element_by_xpath(click_arrow2).click();
+			except:
+				browser.find_element_by_xpath(click_arrow_after_start2).click();
 
 		time.sleep(1)
 		table_after3 = browser.find_element_by_id(tables[0])
@@ -279,9 +295,12 @@ def scrape(urls, alpha, min_number_odds, num_outliers):
 		# ------------------------------------
 		# redo process for next set of bookies
 		try:
-			browser.find_element_by_xpath(click_arrow2).click();
+			browser.find_element_by_xpath(click_morning2).click();
 		except:
-			browser.find_element_by_xpath(click_arrow_after_start2).click();
+			try:
+				browser.find_element_by_xpath(click_arrow2).click();
+			except:
+				browser.find_element_by_xpath(click_arrow_after_start2).click();
 
 		time.sleep(1)
 		table_after4 = browser.find_element_by_id(tables[0])
@@ -301,9 +320,12 @@ def scrape(urls, alpha, min_number_odds, num_outliers):
 		# ------------------------------------
 		# redo process for next set of bookies
 		try:
-			browser.find_element_by_xpath(click_arrow2).click();
+			browser.find_element_by_xpath(click_morning2).click();
 		except:
-			browser.find_element_by_xpath(click_arrow_after_start2).click();
+			try:
+				browser.find_element_by_xpath(click_arrow2).click();
+			except:
+				browser.find_element_by_xpath(click_arrow_after_start2).click();
 
 		time.sleep(1)
 		table_after5 = browser.find_element_by_id(tables[0])
@@ -322,9 +344,12 @@ def scrape(urls, alpha, min_number_odds, num_outliers):
 			# ------------------------------------
 		# redo process for next set of bookies
 		try:
-			browser.find_element_by_xpath(click_arrow2).click();
+			browser.find_element_by_xpath(click_morning2).click();
 		except:
-			browser.find_element_by_xpath(click_arrow_after_start2).click();
+			try:
+				browser.find_element_by_xpath(click_arrow2).click();
+			except:
+				browser.find_element_by_xpath(click_arrow_after_start2).click();
 
 		time.sleep(1)
 		table_after6 = browser.find_element_by_id(tables[0])
@@ -379,7 +404,7 @@ def scrape(urls, alpha, min_number_odds, num_outliers):
 		for i in range(len(data)):
 		
 			# sort odds in each row
-			sl = np.sort([int(x) for x in data.iloc[i,7:34].values if x != '-'])[::-1]
+			sl = np.sort([int(x) for x in data.iloc[i,6:34].values if x != '-'])[::-1]
 
 			# remove top 2 and bottom 2 values (avoid outliers and data issues)
 			sl_sub = sl[num_outliers:len(sl)-num_outliers]
@@ -445,7 +470,7 @@ def scrape(urls, alpha, min_number_odds, num_outliers):
 
 		# export cleaned data
 		now = datetime.now()
-		data.to_csv(path + str(now) + '.csv', sep=',')
+		data.to_csv('./Data_Files/'+ td + '/' + str(now.hour) + '_' + str(now.minute) + '.csv', sep=',')
 
 		
 		# IF WE PUT ON A POSITION
@@ -459,18 +484,38 @@ def scrape(urls, alpha, min_number_odds, num_outliers):
 		kelly_bet_winnings = kelly_bet_size * np.array(bets_subset['Payout_if_Win'])
 
 		if len(bets_subset) > 0:
-			print('OUTCOME: ENTER POSITION')
+			print(str(now.hour) + '_' + str(now.minute) + ': ENTER POSITION')
+			bets_subset.to_csv('./Data_Files/Positive_Signals/' + str(now.hour) + '_' + str(now.minute) + '.csv', sep=',')
 		else:
-			print('OUTCOME: no signal')
+			print(str(now.hour) + '_' + str(now.minute) + ': no signal')
 
-		bets_subset.to_csv(path + '/Positive_Signals/' + str(now) + '.csv', sep=',')
+		
 
 			## ^^^^^^^^^^^^^^^ better way to do this ^^^^^^^^^^^^^^^^^^
 
-
+def check_time(now):
+	if now.hour > 11 and now.hour < 23	: return 1
+	return 0
 
 if __name__ == '__main__':
-	scrape(urls, alpha, min_number_odds, num_outliers)
+	
+	# schedule script runs
+	schedule.every(1).minutes.do(scrape, urls, alpha, min_number_odds, num_outliers)
+	
+	# check time to see if after noon
+	now = datetime.now()
+	cur_time = check_time(now)
+	
+	# keep running until 
+	while cur_time == 1:
+		schedule.run_pending()
+		time.sleep(60)
+
+		now = datetime.now()
+		cur_time = check_time(now)
+
+
+	#	scrape(urls, alpha, min_number_odds, num_outliers)
 
 
 
