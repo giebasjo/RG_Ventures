@@ -36,12 +36,14 @@ td = datetime.today().strftime('%m_%d_%Y'); path = "./" + td + "/"
 
 try:
 	os.system( "mkdir {}".format('./Data_Files/'+td) )
-	os.system( "mkdir {}".format('./Data_Files/Positive_Signals'))
+	os.system( "mkdir {}".format('./Data_Files/'+td+'/NBA') )
+	os.system( "mkdir {}".format('./Data_Files/'+td+'/NCAAM') )
+	os.system( "mkdir {}".format('./Data_Files/' + td + '/Positive_Signals'))
 except:
 	pass
 
 # get rid of warning when appending to df
-warnings.filterwarnings("ignore", category=SettingWithCopyWarning)
+#warnings.filterwarnings("ignore", category=SettingWithCopyWarning)
 
 
 # --------------- INPUTS --------------- 
@@ -58,7 +60,8 @@ teams_ncaam = [str(x).replace('\xa0','') for x in list(teams_ncaam.iloc[:,0])]
 tables = ["bettingOddsGridContainer"]
 
 # DONT CHANGE
-begin_index = 18
+begin_index_nba = 18
+begin_index_ncaam = 14
 
 # bookie "edge"
 alpha = 0.05
@@ -70,7 +73,7 @@ min_number_odds = 12
 num_outliers = 0
 
 # when to start and end scrape
-start_scrape = 11 #11am
+start_scrape = 7 #11am
 end_scrape = 23	#11pm
 # --------------- INPUTS ---------------
 
@@ -88,8 +91,8 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 		
 		for idx, elm in enumerate(data):
 
-			# if element is a valid team name
-			if elm in team_names:
+			# if element is a valid team name - need to adjust for rankings in ncaa bball
+			if elm in team_names or elm[4:] in team_names or elm[5:] in team_names:
 				colnames[1].append(dt)
 				colnames[2].append(elm)
 				colnames[0].append(game_id)
@@ -214,6 +217,11 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 		Bet365 = []
 
 		# grab data and run populate function
+		if 'nba-basketball' in url:
+			begin_index = begin_index_nba
+		else:
+			begin_index = begin_index_ncaa
+
 		colnames = [GameID, Date, Teams, Points, Wagers, Opener, Pinnacle, Fivedimes, Bookmaker, BetOnline]
 		data = table.text.split("\n")[begin_index:]
 		pop = populate(data,colnames,team_names)
@@ -465,9 +473,9 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 	# export cleaned data
 	now = datetime.now()
 	if 'nba-basketball' in url:
-		data.to_csv('./Data_Files/'+ td + '/' + 'nba_' + str(now.hour) + '_' + str(now.minute) + '.csv', sep=',')
+		data.to_csv('./Data_Files/'+ td + '/NBA/' + 'nba_' + str(now.hour) + '_' + str(now.minute) + '.csv', sep=',')
 	else:
-		data.to_csv('./Data_Files/'+ td + '/' + 'ncaam_' + str(now.hour) + '_' + str(now.minute) + '.csv', sep=',')
+		data.to_csv('./Data_Files/'+ td + '/NCAAM/' + 'ncaam_' + str(now.hour) + '_' + str(now.minute) + '.csv', sep=',')
 	
 	# IF WE PUT ON A POSITION
 	# subset where signal = 1 so we put on a position
@@ -482,10 +490,10 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 	if len(bets_subset) > 0:
 		if 'nba-basketball' in url:
 			print(str(now.hour) + '_' + str(now.minute) + ': NBA - ENTER POSITION')
-			bets_subset.to_csv('./Data_Files/Positive_Signals/' + 'nba_' + str(now.hour) + '_' + str(now.minute) + '.csv', sep=',')
+			bets_subset.to_csv('./Data_Files/' + td + '/Positive_Signals/' + 'nba_' + str(now.hour) + '_' + str(now.minute) + '.csv', sep=',')
 		else:
 			print(str(now.hour) + '_' + str(now.minute) + ': NCAAM - ENTER POSITION')
-			bets_subset.to_csv('./Data_Files/Positive_Signals/' + 'ncaam_' + str(now.hour) + '_' + str(now.minute) + '.csv', sep=',')
+			bets_subset.to_csv('./Data_Files/' + td + '/Positive_Signals/' + 'ncaam_' + str(now.hour) + '_' + str(now.minute) + '.csv', sep=',')
 	else:
 		if 'nba-basketball' in url:
 			print(str(now.hour) + '_' + str(now.minute) + ': NBA - no signal')
