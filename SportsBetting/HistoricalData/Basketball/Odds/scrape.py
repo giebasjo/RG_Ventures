@@ -73,7 +73,7 @@ min_number_odds = 12
 num_outliers = 0
 
 # when to start and end scrape
-start_scrape = 7 #11am
+start_scrape = 11 #11am
 end_scrape = 23	#11pm
 # --------------- INPUTS ---------------
 
