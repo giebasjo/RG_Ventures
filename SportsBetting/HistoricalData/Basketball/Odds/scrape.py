@@ -64,7 +64,7 @@ begin_index_nba = 18
 begin_index_ncaam = 14
 
 # bookie "edge"
-alpha = 0.05
+alpha = 0.04
 
 # minimum number of bookies supplying odds. fewer odds than the number below will be excluded
 min_number_odds = 12
@@ -73,7 +73,7 @@ min_number_odds = 12
 num_outliers = 0
 
 # when to start and end scrape
-start_scrape = 11 #11am
+start_scrape = 6 #11am
 end_scrape = 23	#11pm
 # --------------- INPUTS ---------------
 
@@ -88,10 +88,14 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 		odds_count = 0
 		bookie_count = 0
 		dt = data[0]
+		days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 		
 		for idx, elm in enumerate(data):
 
 			# if element is a valid team name - need to adjust for rankings in ncaa bball
+			dt_l = [1 if x in elm else 0 for x in days]
+			if sum(dt_l) > 0: dt = elm
+
 			if elm in team_names or elm[4:] in team_names or elm[5:] in team_names:
 				colnames[1].append(dt)
 				colnames[2].append(elm)
@@ -107,9 +111,17 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 			# games that haven't started will not have points			
 			colnames[3].append(0)
 
+			# append wager %
+			#try:
 			if elm[-1] == "%":
 				colnames[4].append(elm)
-			
+			#	elif (data[idx] == '-' and data[idx-1] == '-'):
+			#		colnames[4].append('-')
+			#	elif (data[idx] == '-' and data[idx-2] in team_names):
+			#		colnames[4].append('-')
+			#except:
+			#	colnames[4].append('-')
+
 			# start appending odds
 			if elm[0] == '+' or elm[0] == '-':
 				colnames[5+bookie_count].append(elm)
@@ -118,7 +130,6 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 				if odds_count % 2 == 0 and bookie_count < 4:
 					bookie_count +=1
 
-		logging.info('Scraping %s.....', dt)
 				
 		return colnames
 
@@ -220,7 +231,7 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 		if 'nba-basketball' in url:
 			begin_index = begin_index_nba
 		else:
-			begin_index = begin_index_ncaa
+			begin_index = begin_index_ncaam
 
 		colnames = [GameID, Date, Teams, Points, Wagers, Opener, Pinnacle, Fivedimes, Bookmaker, BetOnline]
 		data = table.text.split("\n")[begin_index:]
@@ -408,6 +419,8 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 	avg_prob_l = []
 	max_odds_l = []
 	max_prob_l = []
+	min_odds_l = []
+	min_prob_l = []
 
 	for i in range(len(data)):
 	
@@ -422,7 +435,8 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 		if len(sl_sub) > min_number_odds:
 			avg_odds = np.mean(sl_sub)
 			max_odds = np.max(sl_sub)
-			
+			#min_odds = np.min(sl_sub)
+
 			#if max(sl_sub) - min(sl_sub) < 260:
 			probs_tmp = []
 			for odds in sl_sub:
@@ -438,37 +452,66 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 			else:
 			    max_prob_l.append((-int(max_odds)/100)/(1-int(max_odds)/100))
 
+			# calculate min prob
+			#if int(min_odds) > 0:
+			#    min_prob_l.append(1/(1 + int(min_odds)/100))
+			#else:
+			#    min_prob_l.append((-int(min_odds)/100)/(1-int(min_odds)/100))
+
 			avg_odds_l.append(avg_odds)
 			avg_prob_l.append(np.mean(probs_tmp))
 			max_odds_l.append(max_odds)
+			#min_odds_l.append(min_odds)
 
 		else:
 			avg_odds_l.append(0)
 			avg_prob_l.append(0)
 			max_odds_l.append(0)
 			max_prob_l.append(0)
+			#min_odds_l.append(0)
+			#min_prob_l.append(0)
 	
 	# append computed odds and probabilities to dataframe
-	data['Average_Odds'] = avg_odds_l
-	data['Average_Probs'] = avg_prob_l
-	data['Max_Odds'] = max_odds_l
-	data['Max_Implied_Prob'] = max_prob_l
+	data['Consensus_Odds'] = avg_odds_l
+	data['Consensus_Probs'] = avg_prob_l
 
 	# calculate expectations and signals
-	data['Consensus_Minus_Alpha'] = data['Average_Probs'] - alpha
-	
-	filter_signal = data['Max_Implied_Prob'] < data['Consensus_Minus_Alpha']
-	data['Signal'] = [int(x) for x in filter_signal]
+	data['Consensus_Minus_Alpha'] = data['Consensus_Probs'] - alpha
+
+	data['Max_Odds'] = max_odds_l
+	data['Max_Implied_Prob'] = max_prob_l
+	#data['Min_Odds'] = min_odds_l
+	#data['Min_Implied_Prob'] = min_prob_l
+
+	filter_signal_long = data['Max_Implied_Prob'] < data['Consensus_Minus_Alpha']
+	data['Signal_Long'] = [int(x) for x in filter_signal_long]
+
+	filter_signal_short = data['Max_Implied_Prob'] > data['Consensus_Minus_Alpha']
+	data['Signal_Short'] = [int(x) for x in filter_signal_short]
 	
 	# add payout for each bet if successful
-	payout = [-100/x if int(x) < 0 else x/100 for x in data['Max_Odds']]
-	data['Payout_if_Win'] = payout
+	#payout_long ='
+	data['Payout_if_Win_Long'] =  [-100/x if int(x) < 0 else x/100 for x in data['Max_Odds']]
+	data['Payout_if_Lose_Long'] = [-1 for x in data['Max_Odds']]
+
+	#payout_short = [100/x if int(x) < 0 else -x/100 for x in data['Max_Odds']]
+	data['Payout_if_Win_Short'] = [1 for x in data['Max_Odds']]
+	data['Payout_if_Lose_Short'] = [100/x if int(x) < 0 else -x/100 for x in data['Max_Odds']]
 
 	# add expected value of each bet - this will be numerator of kelly
-	expectation = np.array(data['Consensus_Minus_Alpha']) * np.array(data['Payout_if_Win']) -\
-					np.array(1) * (np.array(1) - np.array(data['Consensus_Minus_Alpha']))
-	#expectation = [data.iloc[i,43]*data.iloc[i,41]+ (-1)*(1-data.iloc[i,41]) for i in range(len(data))]
-	data['Expected_Value'] = expectation
+	expectation_long = np.array(data['Consensus_Minus_Alpha']) * np.array(data['Payout_if_Win_Long']) +\
+					(np.array(1) - np.array(data['Consensus_Minus_Alpha'])) * np.array(data['Payout_if_Lose_Long'])
+	data['Expected_Value_Long'] = expectation_long
+
+	expectation_short = (np.array(1) - np.array(data['Consensus_Minus_Alpha'])) * np.array(data['Payout_if_Win_Short']) +\
+					np.array(data['Consensus_Minus_Alpha']) * np.array(data['Payout_if_Lose_Short'])
+	data['Expected_Value_Short'] = expectation_short
+
+	# breakeven odds
+	breakeven_payout = (np.array(1) - np.array(data['Consensus_Minus_Alpha'])) / np.array(data['Consensus_Minus_Alpha'])
+	breakeven_payout_net_comm = [1.02*x for x in breakeven_payout]
+	data['Breakeven_Odds_Gross'] = [-100/x if int(x) < 1 else 100*x for x in breakeven_payout]
+	data['Breakeven_Odds_Net_Comm'] = [-100/x if int(x) < 1 else 100*x for x in breakeven_payout_net_comm]
 
 	# export cleaned data
 	now = datetime.now()
@@ -479,13 +522,18 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 	
 	# IF WE PUT ON A POSITION
 	# subset where signal = 1 so we put on a position
-	bets_subset = data.iloc[np.where(data['Signal'] == 1)[0],:]
-	
+	#bets_subset = data.iloc[np.where((data['Signal_Long'] == 1) or (data['Signal_Short'] == 1))[0],:]
+	bets_subset = data.iloc[np.where(data['Signal_Long'] == 1)[0],:]
+
 	# calculate kelly bet sizes
-	kelly = np.array(bets_subset['Expected_Value']) / np.array(bets_subset['Payout_if_Win'])
-	bets_subset.loc[:,'Kelly'] = kelly
-	kelly_bet_size = np.array(bets_subset['Kelly']) * 100 
-	kelly_bet_winnings = kelly_bet_size * np.array(bets_subset['Payout_if_Win'])
+	kelly_long = np.array(bets_subset['Expected_Value_Long']) / np.array(bets_subset['Payout_if_Win_Long'])
+	bets_subset.loc[:,'Kelly_Long'] = kelly_long
+
+	kelly_short = np.array(bets_subset['Expected_Value_Short']) / np.array(bets_subset['Payout_if_Win_Short'])
+	bets_subset.loc[:,'Kelly_Short'] = kelly_short
+	
+	#kelly_bet_size_long = np.array(bets_subset['Kelly_Long']) * 100 
+	#kelly_bet_winnings_long = kelly_bet_size * np.array(bets_subset['Payout_if_Win_Long'])
 
 	if len(bets_subset) > 0:
 		if 'nba-basketball' in url:
@@ -512,8 +560,8 @@ def check_time(now):
 if __name__ == '__main__':
 
 	# schedule script runs
-	schedule.every(1).minutes.do(scrape, url_nba, alpha, min_number_odds, num_outliers)
-	schedule.every(1).minutes.do(scrape, url_ncaam, alpha, min_number_odds, num_outliers)
+	schedule.every(20).seconds.do(scrape, url_nba, alpha, min_number_odds, num_outliers)
+	#schedule.every(20).seconds.do(scrape, url_ncaam, alpha, min_number_odds, num_outliers)
 
 	# check time to see if after noon
 	now = datetime.now()
@@ -522,7 +570,7 @@ if __name__ == '__main__':
 	# keep running until 
 	while cur_time == 1:
 		schedule.run_pending()
-		time.sleep(60)
+		time.sleep(20)
 
 		now = datetime.now()
 		cur_time = check_time(now)
