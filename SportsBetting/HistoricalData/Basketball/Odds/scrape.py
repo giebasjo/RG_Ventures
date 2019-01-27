@@ -64,7 +64,7 @@ begin_index_nba = 18
 begin_index_ncaam = 14
 
 # bookie "edge"
-alpha = 0.04
+alpha = 0.03
 
 # minimum number of bookies supplying odds. fewer odds than the number below will be excluded
 min_number_odds = 12
@@ -115,12 +115,16 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 			#try:
 			if elm[-1] == "%":
 				colnames[4].append(elm)
-			#	elif (data[idx] == '-' and data[idx-1] == '-'):
+			#		wager_ind = 1
+			#	elif (data[idx] == '-' and data[idx-1] in team_names):
 			#		colnames[4].append('-')
+			#		wager_ind = 0
 			#	elif (data[idx] == '-' and data[idx-2] in team_names):
 			#		colnames[4].append('-')
+			#		wager_ind = 0
 			#except:
 			#	colnames[4].append('-')
+			#	wager_ind = 0
 
 			# start appending odds
 			if elm[0] == '+' or elm[0] == '-':
@@ -509,9 +513,40 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 
 	# breakeven odds
 	breakeven_payout = (np.array(1) - np.array(data['Consensus_Minus_Alpha'])) / np.array(data['Consensus_Minus_Alpha'])
-	breakeven_payout_net_comm = [1.02*x for x in breakeven_payout]
+	breakeven_payout_net_comm_long = [1.02*x for x in breakeven_payout]
+	breakeven_payout_net_comm_short = [0.98*x for x in breakeven_payout]
 	data['Breakeven_Odds_Gross'] = [-100/x if int(x) < 1 else 100*x for x in breakeven_payout]
-	data['Breakeven_Odds_Net_Comm'] = [-100/x if int(x) < 1 else 100*x for x in breakeven_payout_net_comm]
+	data['Breakeven_Odds_Gross_Decimal'] = [-100/x if int(x) < 1 else x/100 for x in data['Breakeven_Odds_Gross']]
+
+	# american moneyline odds
+	break_odds_net_comm_long = [-100/x if int(x) < 1 else 100*x for x in breakeven_payout_net_comm_long]
+	break_odds_net_comm_short = [-100/x if int(x) < 1 else 100*x for x in breakeven_payout_net_comm_short]
+	
+	# convert to decimal odds
+	data['Breakeven_Odds_Net_Comm_Long'] = [-100/x if int(x) < 1 else x/100 for x in break_odds_net_comm_long]
+	data['Breakeven_Odds_Net_Comm_Short'] = [-100/x if int(x) < 1 else x/100 for x in break_odds_net_comm_short]
+
+	edge_long_5ticks = np.array(data['Breakeven_Odds_Net_Comm_Long']) + np.array(0.05)
+	edge_long_10ticks = np.array(data['Breakeven_Odds_Net_Comm_Long']) + np.array(0.10)
+	edge_short_5ticks = np.array(data['Breakeven_Odds_Net_Comm_Short']) - np.array(0.05)
+	edge_short_10ticks = np.array(data['Breakeven_Odds_Net_Comm_Short']) - np.array(0.10)
+
+	data['Edge_Long_5ticks'] = 	((np.array(edge_long_5ticks) - np.array(1)) *np.array(data['Consensus_Minus_Alpha']) +\
+								np.array(-1)*(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / (np.array(edge_long_5ticks)-np.array(1))
+
+	data['Edge_Long_10ticks'] = ((np.array(edge_long_10ticks)-np.array(1))*np.array(data['Consensus_Minus_Alpha']) +\
+								np.array(-1)*(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / (np.array(edge_long_10ticks)-np.array(1))
+
+	data['Edge_Short_5ticks'] = ((np.array(1)-np.array(data['Consensus_Minus_Alpha'])) -\
+								(np.array(edge_short_5ticks) - np.array(1)) * np.array(data['Consensus_Minus_Alpha'])) / (np.array(edge_short_5ticks) - np.array(1))
+
+	data['Edge_Short_10ticks'] = ((np.array(1)-np.array(data['Consensus_Minus_Alpha'])) -\
+								(np.array(edge_short_10ticks) - np.array(1)) * np.array(data['Consensus_Minus_Alpha'])) / (np.array(edge_short_10ticks) - np.array(1))
+
+	# get rid of silly lines of data
+	remove = list(np.where(abs(np.array(data['Max_Odds']) - np.array(data['Consensus_Odds'])) > 250)[0])
+	#data['Date']
+	data = data.drop(remove)
 
 	# export cleaned data
 	now = datetime.now()
@@ -560,7 +595,7 @@ def check_time(now):
 if __name__ == '__main__':
 
 	# schedule script runs
-	schedule.every(20).seconds.do(scrape, url_nba, alpha, min_number_odds, num_outliers)
+	schedule.every(10).seconds.do(scrape, url_nba, alpha, min_number_odds, num_outliers)
 	#schedule.every(20).seconds.do(scrape, url_ncaam, alpha, min_number_odds, num_outliers)
 
 	# check time to see if after noon
@@ -570,7 +605,7 @@ if __name__ == '__main__':
 	# keep running until 
 	while cur_time == 1:
 		schedule.run_pending()
-		time.sleep(20)
+		time.sleep(10)
 
 		now = datetime.now()
 		cur_time = check_time(now)
