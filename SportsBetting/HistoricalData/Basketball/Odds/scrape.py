@@ -64,7 +64,7 @@ begin_index_nba = 18
 begin_index_ncaam = 14
 
 # bookie "edge"
-alpha = 0.03
+alpha = 0.04
 
 # minimum number of bookies supplying odds. fewer odds than the number below will be excluded
 min_number_odds = 12
@@ -523,25 +523,27 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 	break_odds_net_comm_short = [-100/x if int(x) < 1 else 100*x for x in breakeven_payout_net_comm_short]
 	
 	# convert to decimal odds
-	data['Breakeven_Odds_Net_Comm_Long'] = [-100/x if int(x) < 1 else x/100 for x in break_odds_net_comm_long]
-	data['Breakeven_Odds_Net_Comm_Short'] = [-100/x if int(x) < 1 else x/100 for x in break_odds_net_comm_short]
+	# calculate ballpark long edges
+	data['Breakeven_Odds_Net_Comm_Long'] = [-100/x+1 if int(x) < 1 else x/100+1 for x in break_odds_net_comm_long]
+	edge_long_5ticks = np.array(data['Breakeven_Odds_Net_Comm_Long']) - np.array(1) + np.array(0.05)
+	edge_long_10ticks = np.array(data['Breakeven_Odds_Net_Comm_Long']) - np.array(1) + np.array(0.10)
 
-	edge_long_5ticks = np.array(data['Breakeven_Odds_Net_Comm_Long']) + np.array(0.05)
-	edge_long_10ticks = np.array(data['Breakeven_Odds_Net_Comm_Long']) + np.array(0.10)
-	edge_short_5ticks = np.array(data['Breakeven_Odds_Net_Comm_Short']) - np.array(0.05)
-	edge_short_10ticks = np.array(data['Breakeven_Odds_Net_Comm_Short']) - np.array(0.10)
+	data['Edge_Long_5ticks'] = 	(np.array(edge_long_5ticks) * np.array(data['Consensus_Minus_Alpha']) -\
+								(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / np.array(edge_long_5ticks)
 
-	data['Edge_Long_5ticks'] = 	((np.array(edge_long_5ticks) - np.array(1)) *np.array(data['Consensus_Minus_Alpha']) +\
-								np.array(-1)*(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / (np.array(edge_long_5ticks)-np.array(1))
+	data['Edge_Long_10ticks'] = (np.array(edge_long_10ticks) * np.array(data['Consensus_Minus_Alpha']) -\
+								(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / np.array(edge_long_10ticks)
 
-	data['Edge_Long_10ticks'] = ((np.array(edge_long_10ticks)-np.array(1))*np.array(data['Consensus_Minus_Alpha']) +\
-								np.array(-1)*(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / (np.array(edge_long_10ticks)-np.array(1))
+	# calculate ballpark short edges
+	data['Breakeven_Odds_Net_Comm_Short'] = [-100/x+1 if int(x) < 1 else x/100+1 for x in break_odds_net_comm_short]
+	edge_short_5ticks = np.array(data['Breakeven_Odds_Net_Comm_Short']) - np.array(1) - np.array(0.05)
+	edge_short_10ticks = np.array(data['Breakeven_Odds_Net_Comm_Short']) - np.array(1) - np.array(0.10)
 
 	data['Edge_Short_5ticks'] = ((np.array(1)-np.array(data['Consensus_Minus_Alpha'])) -\
-								(np.array(edge_short_5ticks) - np.array(1)) * np.array(data['Consensus_Minus_Alpha'])) / (np.array(edge_short_5ticks) - np.array(1))
+								np.array(edge_short_5ticks) * np.array(data['Consensus_Minus_Alpha']))
 
 	data['Edge_Short_10ticks'] = ((np.array(1)-np.array(data['Consensus_Minus_Alpha'])) -\
-								(np.array(edge_short_10ticks) - np.array(1)) * np.array(data['Consensus_Minus_Alpha'])) / (np.array(edge_short_10ticks) - np.array(1))
+								np.array(edge_short_10ticks) * np.array(data['Consensus_Minus_Alpha']))
 
 	# get rid of silly lines of data
 	remove = list(np.where(abs(np.array(data['Max_Odds']) - np.array(data['Consensus_Odds'])) > 250)[0])
@@ -596,7 +598,7 @@ if __name__ == '__main__':
 
 	# schedule script runs
 	schedule.every(10).seconds.do(scrape, url_nba, alpha, min_number_odds, num_outliers)
-	#schedule.every(20).seconds.do(scrape, url_ncaam, alpha, min_number_odds, num_outliers)
+	#schedule.every(10).seconds.do(scrape, url_ncaam, alpha, min_number_odds, num_outliers)
 
 	# check time to see if after noon
 	now = datetime.now()
@@ -610,6 +612,21 @@ if __name__ == '__main__':
 		now = datetime.now()
 		cur_time = check_time(now)
 
+
+
+
+# NOTES
+# 1_27_2019 - NBA_15_25
+# moving from a 3% alpha to a 2% alpha resulted in ~4-5% difference in breakeven odds
+# i.e. 1.87 w/ 3% to 1.79 w/ 2%
+# this means that we shift in favor of long positions - willing to accept lower payouts on the long side
+
+
+# 2% alpha for exchanges is very accurate - this is helpful because it means that if/when we find things out of
+# line at 2% on the exchange, we take it
+# if we receive a positive long signal on a bookie at ~4% alpha, we have to take that.
+# basically, if we believe the exchanges are accurate, our method is strong with 2% commission being taken
+# only change wrt to bookies is that their margin is prob closer to 3-4%
 
 
 
