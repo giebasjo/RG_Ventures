@@ -64,7 +64,7 @@ begin_index_nba = 18
 begin_index_ncaam = 14
 
 # bookie "edge"
-alpha = 0.04
+alpha = 0.02
 
 # minimum number of bookies supplying odds. fewer odds than the number below will be excluded
 min_number_odds = 12
@@ -146,7 +146,7 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 		for idx, elm in enumerate(data):
 
 			# if element is a valid team name
-			if elm in team_names:
+			if elm in team_names or elm[4:] in team_names or elm[5:] in team_names:
 				team_count += 1
 
 				# increment game_id once two teams are selected
@@ -597,8 +597,8 @@ def check_time(now):
 if __name__ == '__main__':
 
 	# schedule script runs
-	schedule.every(10).seconds.do(scrape, url_nba, alpha, min_number_odds, num_outliers)
-	#schedule.every(10).seconds.do(scrape, url_ncaam, alpha, min_number_odds, num_outliers)
+	#schedule.every(10).seconds.do(scrape, url_nba, alpha, min_number_odds, num_outliers)
+	schedule.every(10).seconds.do(scrape, url_ncaam, alpha, min_number_odds, num_outliers)
 
 	# check time to see if after noon
 	now = datetime.now()
