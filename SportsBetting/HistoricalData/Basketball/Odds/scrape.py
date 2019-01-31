@@ -462,9 +462,9 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 			#else:
 			#    min_prob_l.append((-int(min_odds)/100)/(1-int(min_odds)/100))
 
-			avg_odds_l.append(avg_odds)
-			avg_prob_l.append(np.mean(probs_tmp))
-			max_odds_l.append(max_odds)
+			avg_odds_l.append(round(avg_odds,4))
+			avg_prob_l.append(round(np.mean(probs_tmp),4))
+			max_odds_l.append(round(max_odds,4))
 			#min_odds_l.append(min_odds)
 
 		else:
@@ -483,7 +483,7 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 	data['Consensus_Minus_Alpha'] = data['Consensus_Probs'] - alpha
 
 	data['Max_Odds'] = max_odds_l
-	data['Max_Implied_Prob'] = max_prob_l
+	data['Max_Implied_Prob'] = [round(x,4) for x in max_prob_l]
 	#data['Min_Odds'] = min_odds_l
 	#data['Min_Implied_Prob'] = min_prob_l
 
@@ -495,28 +495,33 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 	
 	# add payout for each bet if successful
 	#payout_long ='
-	data['Payout_if_Win_Long'] =  [-100/x if int(x) < 0 else x/100 for x in data['Max_Odds']]
-	data['Payout_if_Lose_Long'] = [-1 for x in data['Max_Odds']]
+	pay_win_long =  [-100/x if int(x) < 0 else x/100 for x in data['Max_Odds']]
+	pay_lose_long = [-1 for x in data['Max_Odds']]
 
 	#payout_short = [100/x if int(x) < 0 else -x/100 for x in data['Max_Odds']]
-	data['Payout_if_Win_Short'] = [1 for x in data['Max_Odds']]
-	data['Payout_if_Lose_Short'] = [100/x if int(x) < 0 else -x/100 for x in data['Max_Odds']]
+	pay_win_short = [1 for x in data['Max_Odds']]
+	pay_lose_short = [100/x if int(x) < 0 else -x/100 for x in data['Max_Odds']]
 
 	# add expected value of each bet - this will be numerator of kelly
-	expectation_long = np.array(data['Consensus_Minus_Alpha']) * np.array(data['Payout_if_Win_Long']) +\
-					(np.array(1) - np.array(data['Consensus_Minus_Alpha'])) * np.array(data['Payout_if_Lose_Long'])
-	data['Expected_Value_Long'] = expectation_long
+	expectation_long = np.array(data['Consensus_Minus_Alpha']) * np.array(pay_win_long) +\
+					(np.array(1) - np.array(data['Consensus_Minus_Alpha'])) * np.array(pay_lose_long)
+	data['Expected_Value_Long'] = [round(x,4) for x in expectation_long]
 
-	expectation_short = (np.array(1) - np.array(data['Consensus_Minus_Alpha'])) * np.array(data['Payout_if_Win_Short']) +\
-					np.array(data['Consensus_Minus_Alpha']) * np.array(data['Payout_if_Lose_Short'])
-	data['Expected_Value_Short'] = expectation_short
+	# kelly values
+	data['Kelly_Long'] = [x if x > 0 else 0 for x in np.array(expectation_long) / np.array(pay_win_long)]
+
+	#expectation_short = (np.array(1) - np.array(data['Consensus_Minus_Alpha'])) * np.array(pay_win_short) +\
+	#				np.array(data['Consensus_Minus_Alpha']) * np.array(pay_lose_short)
+	#data['Expected_Value_Short'] = expectation_short
+
+
 
 	# breakeven odds
-	breakeven_payout = (np.array(1) - np.array(data['Consensus_Minus_Alpha'])) / np.array(data['Consensus_Minus_Alpha'])
-	breakeven_payout_net_comm_long = [1.02*x for x in breakeven_payout]
-	breakeven_payout_net_comm_short = [0.98*x for x in breakeven_payout]
-	data['Breakeven_Odds_Gross'] = [-100/x if int(x) < 1 else 100*x for x in breakeven_payout]
-	data['Breakeven_Odds_Gross_Decimal'] = [-100/x if int(x) < 1 else x/100 for x in data['Breakeven_Odds_Gross']]
+	breakeven_payout = [round(x,4) for x in (np.array(1) - np.array(data['Consensus_Minus_Alpha'])) / np.array(data['Consensus_Minus_Alpha'])]
+	breakeven_payout_net_comm_long = [round(1.02*x,4) for x in breakeven_payout]
+	breakeven_payout_net_comm_short = [round(0.98*x,4) for x in breakeven_payout]
+	data['Breakeven_Odds_Gross'] = [round(-100/x,4) if int(x) < 1 else round(100*x,4) for x in breakeven_payout]
+	data['Breakeven_Odds_Gross_Decimal'] = [round(-100/x+1,4) if int(x) < 1 else round(x/100+1,4) for x in data['Breakeven_Odds_Gross']]
 
 	# american moneyline odds
 	break_odds_net_comm_long = [-100/x if int(x) < 1 else 100*x for x in breakeven_payout_net_comm_long]
@@ -528,28 +533,32 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 	edge_long_5ticks = np.array(data['Breakeven_Odds_Net_Comm_Long']) - np.array(1) + np.array(0.05)
 	edge_long_10ticks = np.array(data['Breakeven_Odds_Net_Comm_Long']) - np.array(1) + np.array(0.10)
 
-	data['Edge_Long_5ticks'] = 	(np.array(edge_long_5ticks) * np.array(data['Consensus_Minus_Alpha']) -\
-								(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / np.array(edge_long_5ticks)
+	data['Edge_Long_5ticks'] = 	[round(x,4) for x in (np.array(edge_long_5ticks) * np.array(data['Consensus_Minus_Alpha']) -\
+								(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / np.array(edge_long_5ticks)]
 
-	data['Edge_Long_10ticks'] = (np.array(edge_long_10ticks) * np.array(data['Consensus_Minus_Alpha']) -\
-								(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / np.array(edge_long_10ticks)
+	data['Edge_Long_10ticks'] = [round(x,4) for x in (np.array(edge_long_10ticks) * np.array(data['Consensus_Minus_Alpha']) -\
+								(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / np.array(edge_long_10ticks)]
 
 	# calculate ballpark short edges
 	data['Breakeven_Odds_Net_Comm_Short'] = [-100/x+1 if int(x) < 1 else x/100+1 for x in break_odds_net_comm_short]
 	edge_short_5ticks = np.array(data['Breakeven_Odds_Net_Comm_Short']) - np.array(1) - np.array(0.05)
 	edge_short_10ticks = np.array(data['Breakeven_Odds_Net_Comm_Short']) - np.array(1) - np.array(0.10)
 
-	data['Edge_Short_5ticks'] = ((np.array(1)-np.array(data['Consensus_Minus_Alpha'])) -\
-								np.array(edge_short_5ticks) * np.array(data['Consensus_Minus_Alpha']))
+	data['Edge_Short_5ticks'] = [round(x,4) for x in ((np.array(1)-np.array(data['Consensus_Minus_Alpha'])) -\
+								np.array(edge_short_5ticks) * np.array(data['Consensus_Minus_Alpha']))]
 
-	data['Edge_Short_10ticks'] = ((np.array(1)-np.array(data['Consensus_Minus_Alpha'])) -\
-								np.array(edge_short_10ticks) * np.array(data['Consensus_Minus_Alpha']))
+	data['Edge_Short_10ticks'] = [round(x,4) for x in ((np.array(1)-np.array(data['Consensus_Minus_Alpha'])) -\
+								np.array(edge_short_10ticks) * np.array(data['Consensus_Minus_Alpha']))]
 
 	# get rid of silly lines of data
-	remove = list(np.where(abs(np.array(data['Max_Odds']) - np.array(data['Consensus_Odds'])) > 250)[0])
-	#data['Date']
-	data = data.drop(remove)
-
+	remove_odds = list(np.where(abs(np.array(data['Max_Odds']) - np.array(data['Consensus_Odds'])) > 250)[0])
+	data = data.drop(remove_odds)
+	
+	cur_dt = data['Date'][0]
+	#keep_dt = [False if dt == cur_dt else False for dt in data['Date']]
+	remove_dt = list(np.where(data['Date'] != cur_dt)[0])
+	data = data.drop(remove_dt)
+	#data = data.drop(['Payout_if_Win_Long','Payout_if_Lose_Long','Payout_if_Win_Short','Payout_if_Lose_Short','Expected_Value_Short'], axis=1)
 	# export cleaned data
 	now = datetime.now()
 	if 'nba-basketball' in url:
@@ -563,11 +572,11 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 	bets_subset = data.iloc[np.where(data['Signal_Long'] == 1)[0],:]
 
 	# calculate kelly bet sizes
-	kelly_long = np.array(bets_subset['Expected_Value_Long']) / np.array(bets_subset['Payout_if_Win_Long'])
-	bets_subset.loc[:,'Kelly_Long'] = kelly_long
+	#kelly_long = np.array(bets_subset['Expected_Value_Long']) / np.array(bets_subset['Payout_if_Win_Long'])
+	#bets_subset.loc[:,'Kelly_Long'] = kelly_long
 
-	kelly_short = np.array(bets_subset['Expected_Value_Short']) / np.array(bets_subset['Payout_if_Win_Short'])
-	bets_subset.loc[:,'Kelly_Short'] = kelly_short
+	#kelly_short = np.array(bets_subset['Expected_Value_Short']) / np.array(bets_subset['Payout_if_Win_Short'])
+	#bets_subset.loc[:,'Kelly_Short'] = kelly_short
 	
 	#kelly_bet_size_long = np.array(bets_subset['Kelly_Long']) * 100 
 	#kelly_bet_winnings_long = kelly_bet_size * np.array(bets_subset['Payout_if_Win_Long'])
@@ -597,8 +606,8 @@ def check_time(now):
 if __name__ == '__main__':
 
 	# schedule script runs
-	#schedule.every(10).seconds.do(scrape, url_nba, alpha, min_number_odds, num_outliers)
-	schedule.every(10).seconds.do(scrape, url_ncaam, alpha, min_number_odds, num_outliers)
+	schedule.every(10).seconds.do(scrape, url_nba, alpha, min_number_odds, num_outliers)
+	#schedule.every(10).seconds.do(scrape, url_ncaam, alpha, min_number_odds, num_outliers)
 
 	# check time to see if after noon
 	now = datetime.now()
