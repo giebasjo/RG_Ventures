@@ -636,9 +636,9 @@ def check_time(now):
 if __name__ == '__main__':
 
 	# schedule script runs
-	#schedule.every(10).seconds.do(scrape, url_nba, alpha, min_number_odds, num_outliers)
+	schedule.every(10).seconds.do(scrape, url_nba, alpha, min_number_odds, num_outliers)
 	#schedule.every(10).seconds.do(scrape, url_ncaam, alpha, min_number_odds, num_outliers)
-	schedule.every(10).seconds.do(scrape, url_epl, alpha, min_number_odds, num_outliers)
+	#schedule.every(10).seconds.do(scrape, url_epl, alpha, min_number_odds, num_outliers)
 
 
 	# check time to see if after noon
