@@ -28,6 +28,7 @@ import scipy.stats
 from sklearn.linear_model import LinearRegression
 import schedule
 import warnings
+import sys
 
 from multiprocessing import current_process
 from datetime import date, timedelta, datetime
@@ -35,14 +36,14 @@ from datetime import date, timedelta, datetime
 td = datetime.today().strftime('%m_%d_%Y'); path = "./" + td + "/"
 
 try:
-	os.system( "mkdir {}".format('./Data_Files/'+td) )
-	os.system( "mkdir {}".format('./Data_Files/'+td+'/NBA') )
-	os.system( "mkdir {}".format('./Data_Files/'+td+'/NCAAM') )
-	os.system( "mkdir {}".format('./Data_Files/'+td+'/EPL') )
-	os.system( "mkdir {}".format('./Data_Files/' + td + '/Positive_Signals'))
-	print('Directories created successfully')
+	os.system( "mkdir -p {}".format('./Data_Files/'+td) )
+	os.system( "mkdir -p {}".format('./Data_Files/'+td+'/NBA') )
+	os.system( "mkdir -p {}".format('./Data_Files/'+td+'/NCAAM') )
+	os.system( "mkdir -p {}".format('./Data_Files/'+td+'/EPL') )
+	os.system( "mkdir -p {}".format('./Data_Files/' + td + '/Positive_Signals'))
+	print('Directories created successfully or already exist')
 except:
-	print('Directories already created')
+	print('ERROR CREATING DIRECTORIES')
 
 # get rid of warning when appending to df
 #warnings.filterwarnings("ignore", category=SettingWithCopyWarning)
@@ -69,7 +70,10 @@ tables = ["bettingOddsGridContainer"]
 # DONT CHANGE
 begin_index_nba = 18
 begin_index_ncaam = 14
-begin_index_epl = 14
+begin_index_epl = 0
+
+# indicator (1 for NBA, 2 for NCAA, 3 for EPL)
+indicator = int(sys.argv[1])
 
 # bookie "edge"
 alpha = 0.02
@@ -85,8 +89,8 @@ start_scrape = 6 #11am
 end_scrape = 23	#11pm
 # --------------- INPUTS ---------------
 
-
-def scrape(url, alpha, min_number_odds, num_outliers):
+# indicator - 1 for NBA, 2 for NCAA, 3 for EPL
+def scrape(url, alpha, min_number_odds, num_outliers, indicator):
 
 	# --------------------- DEFINE FUNCTIONS START ---------------------
 	# initial populate function
@@ -95,7 +99,12 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 		team_count = 0
 		odds_count = 0
 		bookie_count = 0
-		dt = data[0]
+
+		if indicator == 3:
+			dt = data[14]
+		else:
+			dt = data[0]
+
 		days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 		
 		for idx, elm in enumerate(data):
@@ -151,7 +160,6 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 
 				if odds_count % odds_count_mod == 0 and bookie_count < 4:
 					bookie_count +=1
-
 				
 		return colnames
 
@@ -552,29 +560,60 @@ def scrape(url, alpha, min_number_odds, num_outliers):
 	# convert to decimal odds
 	# calculate ballpark long edges
 	data['Breakeven_Odds_Net_Comm_Long'] = [-100/x+1 if int(x) < 1 else x/100+1 for x in break_odds_net_comm_long]
-	edge_long_5ticks = np.array(data['Breakeven_Odds_Net_Comm_Long']) - np.array(1) + np.array(0.05)
-	edge_long_10ticks = np.array(data['Breakeven_Odds_Net_Comm_Long']) - np.array(1) + np.array(0.10)
+	payout_long_2ticks = np.array(data['Breakeven_Odds_Net_Comm_Long']) - np.array(1) + np.array(0.02)
+	payout_long_5ticks = np.array(data['Breakeven_Odds_Net_Comm_Long']) - np.array(1) + np.array(0.05)
+	payout_long_10ticks = np.array(data['Breakeven_Odds_Net_Comm_Long']) - np.array(1) + np.array(0.10)
 
-	data['Edge_Long_5ticks'] = 	[round(x,4) for x in (np.array(edge_long_5ticks) * np.array(data['Consensus_Minus_Alpha']) -\
-								(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / np.array(edge_long_5ticks)]
+	data['Kelly_Long_2ticks'] = [round(x,4) for x in (np.array(payout_long_2ticks) * np.array(data['Consensus_Minus_Alpha']) -\
+									(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / np.array(payout_long_2ticks)]
 
-	data['Edge_Long_10ticks'] = [round(x,4) for x in (np.array(edge_long_10ticks) * np.array(data['Consensus_Minus_Alpha']) -\
-								(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / np.array(edge_long_10ticks)]
+	data['Kelly_Long_5ticks'] = [round(x,4) for x in (np.array(payout_long_5ticks) * np.array(data['Consensus_Minus_Alpha']) -\
+									(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / np.array(payout_long_5ticks)]
+
+	#data['Kelly_Long_10ticks'] = [round(x,4) for x in (np.array(payout_long_10ticks) * np.array(data['Consensus_Minus_Alpha']) -\
+	#								(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / np.array(payout_long_10ticks)]
 
 	# calculate ballpark short edges
 	data['Breakeven_Odds_Net_Comm_Short'] = [-100/x+1 if int(x) < 1 else x/100+1 for x in break_odds_net_comm_short]
-	edge_short_5ticks = np.array(data['Breakeven_Odds_Net_Comm_Short']) - np.array(1) - np.array(0.05)
-	edge_short_10ticks = np.array(data['Breakeven_Odds_Net_Comm_Short']) - np.array(1) - np.array(0.10)
+	payout_short_2ticks = np.array(data['Breakeven_Odds_Net_Comm_Short']) - np.array(1) - np.array(0.02)
+	payout_short_5ticks = np.array(data['Breakeven_Odds_Net_Comm_Short']) - np.array(1) - np.array(0.05)
+	payout_short_10ticks = np.array(data['Breakeven_Odds_Net_Comm_Short']) - np.array(1) - np.array(0.10)
 
-	data['Edge_Short_5ticks'] = [round(x,4) for x in ((np.array(1)-np.array(data['Consensus_Minus_Alpha'])) -\
-								np.array(edge_short_5ticks) * np.array(data['Consensus_Minus_Alpha']))]
+	kelly_short_2ticks_favorite = [round(x,4) for x in ((np.array(1)-np.array(data['Consensus_Minus_Alpha'])) -\
+								np.array(payout_short_2ticks) * np.array(data['Consensus_Minus_Alpha']))]
 
-	data['Edge_Short_10ticks'] = [round(x,4) for x in ((np.array(1)-np.array(data['Consensus_Minus_Alpha'])) -\
-								np.array(edge_short_10ticks) * np.array(data['Consensus_Minus_Alpha']))]
+	kelly_short_5ticks_favorite = [round(x,4) for x in ((np.array(1)-np.array(data['Consensus_Minus_Alpha'])) -\
+								np.array(payout_short_5ticks) * np.array(data['Consensus_Minus_Alpha']))]
+
+	kelly_short_10ticks_favorite = [round(x,4) for x in ((np.array(1)-np.array(data['Consensus_Minus_Alpha'])) -\
+								np.array(payout_short_10ticks) * np.array(data['Consensus_Minus_Alpha']))]
+
+
+	kelly_short_2ticks_underdog = [round(x,4) for x in (np.array(1)-np.array(data['Consensus_Minus_Alpha'])) / np.array(payout_short_2ticks) -\
+									np.array(data['Consensus_Minus_Alpha']) / np.array(1)]
+	
+	kelly_short_5ticks_underdog = [round(x,4) for x in (np.array(1)-np.array(data['Consensus_Minus_Alpha'])) / np.array(payout_short_5ticks) -\
+									np.array(data['Consensus_Minus_Alpha']) / np.array(1)]
+
+	kelly_short_10ticks_underdog = [round(x,4) for x in (np.array(1)-np.array(data['Consensus_Minus_Alpha'])) / np.array(payout_short_10ticks) -\
+									np.array(data['Consensus_Minus_Alpha']) / np.array(1)]
+
+	kelly_short_2ticks_final = [kelly_short_2ticks_underdog[i] if payout_short_2ticks[i] > 1 else kelly_short_2ticks_favorite[i]
+								for i in range(len(kelly_short_2ticks_favorite))]
+
+	kelly_short_5ticks_final = [kelly_short_5ticks_underdog[i] if payout_short_5ticks[i] > 1 else kelly_short_5ticks_favorite[i]
+								for i in range(len(kelly_short_5ticks_favorite))]
+
+	kelly_short_10ticks_final = [kelly_short_10ticks_underdog[i] if payout_short_10ticks[i] > 1 else kelly_short_10ticks_favorite[i]
+								for i in range(len(kelly_short_10ticks_favorite))]
+	
+	data['Kelly_Short_2ticks'] = [round(x,4) for x in kelly_short_2ticks_final]
+	data['Kelly_Short_5ticks'] = [round(x,4) for x in kelly_short_5ticks_final]
+	#data['Kelly_Short_10ticks'] = [round(x,4) for x in kelly_short_10ticks_final]
 
 	# get rid of silly lines of data
-	remove_odds = list(np.where(abs(np.array(data['Max_Odds']) - np.array(data['Consensus_Odds'])) > 250)[0])
-	data = data.drop(remove_odds)
+	#remove_odds = list(np.where(abs(np.array(data['Max_Odds']) - np.array(data['Consensus_Odds'])) > 250)[0])
+	#data = data.drop(remove_odds)
 
 	# get rid of games on later days	
 	#cur_dt = data['Date'][0]
@@ -636,9 +675,12 @@ def check_time(now):
 if __name__ == '__main__':
 
 	# schedule script runs
-	schedule.every(10).seconds.do(scrape, url_nba, alpha, min_number_odds, num_outliers)
-	#schedule.every(10).seconds.do(scrape, url_ncaam, alpha, min_number_odds, num_outliers)
-	#schedule.every(10).seconds.do(scrape, url_epl, alpha, min_number_odds, num_outliers)
+	if indicator == 1:
+		schedule.every(10).seconds.do(scrape, url_nba, alpha, min_number_odds, num_outliers, indicator)
+	elif indicator == 2:
+		schedule.every(10).seconds.do(scrape, url_ncaam, alpha, min_number_odds, num_outliers, indicator)
+	else:
+		schedule.every(10).seconds.do(scrape, url_epl, alpha, min_number_odds, num_outliers, indicator)
 
 
 	# check time to see if after noon
