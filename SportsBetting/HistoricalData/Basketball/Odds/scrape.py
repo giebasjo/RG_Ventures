@@ -39,7 +39,7 @@ try:
 	os.system( "mkdir -p {}".format('./Data_Files/'+td) )
 	os.system( "mkdir -p {}".format('./Data_Files/'+td+'/NBA') )
 	os.system( "mkdir -p {}".format('./Data_Files/'+td+'/NCAAM') )
-	os.system( "mkdir -p {}".format('./Data_Files/'+td+'/EPL') )
+	os.system( "mkdir -p {}".format('./Data_Files/'+td+'/SOCCER') )
 	os.system( "mkdir -p {}".format('./Data_Files/' + td + '/Positive_Signals'))
 	print('Directories created successfully or already exist')
 except:
@@ -60,9 +60,9 @@ url_ncaam = 'https://www.sportsbookreview.com/betting-odds/ncaa-basketball/money
 teams_ncaam = pd.read_csv('ncaam_teams.csv',header=None)
 teams_ncaam = [str(x).replace('\xa0','') for x in list(teams_ncaam.iloc[:,0])]
 
-url_epl = 'https://www.sportsbookreview.com/betting-odds/english-premier-league/money-line/'
-teams_epl = pd.read_csv('epl_teams.csv',header=None)
-teams_epl = [str(x).replace('\xa0','') for x in list(teams_epl.iloc[:,0])]
+url_soccer = 'https://www.sportsbookreview.com/betting-odds/soccer/money-line/'
+teams_soccer = pd.read_csv('soccer_teams.csv',header=None)
+teams_soccer = [str(x).replace('\xa0','') for x in list(teams_soccer.iloc[:,0])]
 
 
 tables = ["bettingOddsGridContainer"]
@@ -70,9 +70,9 @@ tables = ["bettingOddsGridContainer"]
 # DONT CHANGE
 begin_index_nba = 18
 begin_index_ncaam = 14
-begin_index_epl = 0
+begin_index_soccer = 0
 
-# indicator (1 for NBA, 2 for NCAA, 3 for EPL)
+# indicator (1 for NBA, 2 for NCAA, 3 for SOCCER)
 indicator = int(sys.argv[1])
 
 # bookie "edge"
@@ -89,7 +89,7 @@ start_scrape = 6 #11am
 end_scrape = 23	#11pm
 # --------------- INPUTS ---------------
 
-# indicator - 1 for NBA, 2 for NCAA, 3 for EPL
+# indicator - 1 for NBA, 2 for NCAA, 3 for SOCCER
 def scrape(url, alpha, min_number_odds, num_outliers, indicator):
 
 	# --------------------- DEFINE FUNCTIONS START ---------------------
@@ -120,7 +120,7 @@ def scrape(url, alpha, min_number_odds, num_outliers, indicator):
 				team_count += 1
 
 				# increment game_id once two teams are selected
-				if 'english-premier-league' in url:
+				if 'soccer' in url:
 					team_count_mod = 3
 				else:
 					team_count_mod = 2
@@ -137,23 +137,13 @@ def scrape(url, alpha, min_number_odds, num_outliers, indicator):
 			#try:
 			if elm[-1] == "%":
 				colnames[4].append(elm)
-			#		wager_ind = 1
-			#	elif (data[idx] == '-' and data[idx-1] in team_names):
-			#		colnames[4].append('-')
-			#		wager_ind = 0
-			#	elif (data[idx] == '-' and data[idx-2] in team_names):
-			#		colnames[4].append('-')
-			#		wager_ind = 0
-			#except:
-			#	colnames[4].append('-')
-			#	wager_ind = 0
 
 			# start appending odds
 			if elm[0] == '+' or elm[0] == '-':
 				colnames[5+bookie_count].append(elm)
 				odds_count += 1
 		
-				if 'english-premier-league' in url:
+				if 'soccer' in url:
 					odds_count_mod = 3
 				else:
 					odds_count_mod = 2
@@ -176,15 +166,26 @@ def scrape(url, alpha, min_number_odds, num_outliers, indicator):
 				team_count += 1
 
 				# increment game_id once two teams are selected
-				if team_count % 2 == 0:
+
+				if 'soccer' in url:
+					team_count_mod = 3
+				else:
+					team_count_mod = 2
+
+				if team_count % team_count_mod == 0:
 					odds_count = 0
 					bookie_count = 0
 
 			if elm[0] == '+' or elm[0] == '-':
 				colnames[bookie_count].append(elm)
 				odds_count += 1
+
+				if 'soccer' in url:
+					odds_count_mod = 3
+				else:
+					odds_count_mod = 2
 		        
-				if odds_count % 2 == 0 and bookie_count < 4:
+				if odds_count % odds_count_mod == 0 and bookie_count < 4:
 					bookie_count +=1
 
 		return colnames
@@ -201,7 +202,7 @@ def scrape(url, alpha, min_number_odds, num_outliers, indicator):
 		elif 'ncaa-basketball' in url:
 			team_names = teams_ncaam
 		else:
-			team_names = teams_epl
+			team_names = teams_soccer
 		
 		#click_arrow = "/html/body/div/div/div/div/section/div/div[3]/div[2]/div[3]/div[3]/div[1]/div/div"
 		click_arrow = '/html/body/div/div/div/div/section/div/div[3]/div[2]/div[3]/div[2]/div/div/div'
@@ -264,7 +265,7 @@ def scrape(url, alpha, min_number_odds, num_outliers, indicator):
 		elif 'ncaa-basketball' in url:
 			begin_index = begin_index_ncaam
 		else:
-			begin_index = begin_index_epl
+			begin_index = begin_index_soccer
 
 
 		colnames = [GameID, Date, Teams, Points, Wagers, Opener, Pinnacle, Fivedimes, Bookmaker, BetOnline]
@@ -628,7 +629,7 @@ def scrape(url, alpha, min_number_odds, num_outliers, indicator):
 	elif 'ncaa-basketball' in url:
 		data.to_csv('./Data_Files/'+ td + '/NCAAM/' + 'ncaam_' + str(now.hour) + '_' + str(now.minute) + '.csv', sep=',')
 	else:
-		data.to_csv('./Data_Files/'+ td + '/EPL/' + 'epl_' + str(now.hour) + '_' + str(now.minute) + '.csv', sep=',')
+		data.to_csv('./Data_Files/'+ td + '/SOCCER/' + 'soccer_' + str(now.hour) + '_' + str(now.minute) + '.csv', sep=',')
 
 	# IF WE PUT ON A POSITION
 	# subset where signal = 1 so we put on a position
@@ -653,8 +654,8 @@ def scrape(url, alpha, min_number_odds, num_outliers, indicator):
 			print(str(now.hour) + '_' + str(now.minute) + ': NCAAM - ENTER POSITION')
 			bets_subset.to_csv('./Data_Files/' + td + '/Positive_Signals/' + 'ncaam_' + str(now.hour) + '_' + str(now.minute) + '.csv', sep=',')
 		else:
-			print(str(now.hour) + '_' + str(now.minute) + ': EPL - ENTER POSITION')
-			bets_subset.to_csv('./Data_Files/' + td + '/Positive_Signals/' + 'epl_' + str(now.hour) + '_' + str(now.minute) + '.csv', sep=',')
+			print(str(now.hour) + '_' + str(now.minute) + ': SOCCER - ENTER POSITION')
+			bets_subset.to_csv('./Data_Files/' + td + '/Positive_Signals/' + 'soccer_' + str(now.hour) + '_' + str(now.minute) + '.csv', sep=',')
 
 	else:
 		if 'nba-basketball' in url:
@@ -662,7 +663,7 @@ def scrape(url, alpha, min_number_odds, num_outliers, indicator):
 		elif 'ncaa-basketball' in url:
 			print(str(now.hour) + '_' + str(now.minute) + ': NCAAM - no signal')
 		else:
-			print(str(now.hour) + '_' + str(now.minute) + ': EPL - no signal')
+			print(str(now.hour) + '_' + str(now.minute) + ': SOCCER - no signal')
 		
 
 			## ^^^^^^^^^^^^^^^ better way to do this ^^^^^^^^^^^^^^^^^^
@@ -680,7 +681,7 @@ if __name__ == '__main__':
 	elif indicator == 2:
 		schedule.every(10).seconds.do(scrape, url_ncaam, alpha, min_number_odds, num_outliers, indicator)
 	else:
-		schedule.every(10).seconds.do(scrape, url_epl, alpha, min_number_odds, num_outliers, indicator)
+		schedule.every(10).seconds.do(scrape, url_soccer, alpha, min_number_odds, num_outliers, indicator)
 
 
 	# check time to see if after noon
