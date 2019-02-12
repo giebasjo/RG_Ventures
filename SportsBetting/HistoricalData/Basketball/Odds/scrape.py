@@ -101,7 +101,7 @@ def scrape(url, alpha, min_number_odds, num_outliers, indicator):
 		bookie_count = 0
 
 		if indicator == 3:
-			dt = data[14]
+			dt = data[15]
 		else:
 			dt = data[0]
 
@@ -139,17 +139,18 @@ def scrape(url, alpha, min_number_odds, num_outliers, indicator):
 				colnames[4].append(elm)
 
 			# start appending odds
-			if elm[0] == '+' or elm[0] == '-':
-				colnames[5+bookie_count].append(elm)
-				odds_count += 1
+			if idx > 3:
+				if elm[0] == '+' or elm[0] == '-' and data[idx-1] != 'Draw' and data[idx-2] != 'Draw' and data[idx-3] != 'Draw':
+					colnames[5+bookie_count].append(elm)
+					odds_count += 1
 		
-				if 'soccer' in url:
-					odds_count_mod = 3
-				else:
-					odds_count_mod = 2
+					if 'soccer' in url:
+						odds_count_mod = 3
+					else:
+						odds_count_mod = 2
 
-				if odds_count % odds_count_mod == 0 and bookie_count < 4:
-					bookie_count +=1
+					if odds_count % odds_count_mod == 0 and bookie_count < 4:
+						bookie_count +=1
 				
 		return colnames
 
@@ -176,17 +177,18 @@ def scrape(url, alpha, min_number_odds, num_outliers, indicator):
 					odds_count = 0
 					bookie_count = 0
 
-			if elm[0] == '+' or elm[0] == '-':
-				colnames[bookie_count].append(elm)
-				odds_count += 1
+			if idx > 3:
+				if elm[0] == '+' or elm[0] == '-' and data[idx-1] != 'Draw' and data[idx-2] != 'Draw' and data[idx-3] != 'Draw':
+					colnames[bookie_count].append(elm)
+					odds_count += 1
 
-				if 'soccer' in url:
-					odds_count_mod = 3
-				else:
-					odds_count_mod = 2
-		        
-				if odds_count % odds_count_mod == 0 and bookie_count < 4:
-					bookie_count +=1
+					if 'soccer' in url:
+						odds_count_mod = 3
+					else:
+						odds_count_mod = 2
+				    
+					if odds_count % odds_count_mod == 0 and bookie_count < 4:
+						bookie_count +=1
 
 		return colnames
 
