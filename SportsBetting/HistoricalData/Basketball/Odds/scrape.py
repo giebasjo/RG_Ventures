@@ -566,12 +566,16 @@ def scrape(url, alpha, min_number_odds, num_outliers, indicator):
 	payout_long_2ticks = np.array(data['Breakeven_Odds_Net_Comm_Long']) - np.array(1) + np.array(0.02)
 	payout_long_5ticks = np.array(data['Breakeven_Odds_Net_Comm_Long']) - np.array(1) + np.array(0.05)
 	payout_long_10ticks = np.array(data['Breakeven_Odds_Net_Comm_Long']) - np.array(1) + np.array(0.10)
+	payout_long_30ticks = np.array(data['Breakeven_Odds_Net_Comm_Long']) - np.array(1) + np.array(0.30)
 
 	data['Kelly_Long_2ticks'] = [round(x,4) for x in (np.array(payout_long_2ticks) * np.array(data['Consensus_Minus_Alpha']) -\
 									(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / np.array(payout_long_2ticks)]
 
 	data['Kelly_Long_5ticks'] = [round(x,4) for x in (np.array(payout_long_5ticks) * np.array(data['Consensus_Minus_Alpha']) -\
 									(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / np.array(payout_long_5ticks)]
+
+	data['Kelly_Long_30ticks'] = [round(x,4) for x in (np.array(payout_long_30ticks) * np.array(data['Consensus_Minus_Alpha']) -\
+									(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / np.array(payout_long_30ticks)]
 
 	#data['Kelly_Long_10ticks'] = [round(x,4) for x in (np.array(payout_long_10ticks) * np.array(data['Consensus_Minus_Alpha']) -\
 	#								(np.array(1)-np.array(data['Consensus_Minus_Alpha']))) / np.array(payout_long_10ticks)]
@@ -581,6 +585,7 @@ def scrape(url, alpha, min_number_odds, num_outliers, indicator):
 	payout_short_2ticks = np.array(data['Breakeven_Odds_Net_Comm_Short']) - np.array(1) - np.array(0.02)
 	payout_short_5ticks = np.array(data['Breakeven_Odds_Net_Comm_Short']) - np.array(1) - np.array(0.05)
 	payout_short_10ticks = np.array(data['Breakeven_Odds_Net_Comm_Short']) - np.array(1) - np.array(0.10)
+	payout_short_30ticks = np.array(data['Breakeven_Odds_Net_Comm_Short']) - np.array(1) - np.array(0.30)
 
 	kelly_short_2ticks_favorite = [round(x,4) for x in ((np.array(1)-np.array(data['Consensus_Minus_Alpha'])) -\
 								np.array(payout_short_2ticks) * np.array(data['Consensus_Minus_Alpha']))]
@@ -590,6 +595,9 @@ def scrape(url, alpha, min_number_odds, num_outliers, indicator):
 
 	kelly_short_10ticks_favorite = [round(x,4) for x in ((np.array(1)-np.array(data['Consensus_Minus_Alpha'])) -\
 								np.array(payout_short_10ticks) * np.array(data['Consensus_Minus_Alpha']))]
+
+	kelly_short_30ticks_favorite = [round(x,4) for x in ((np.array(1)-np.array(data['Consensus_Minus_Alpha'])) -\
+								np.array(payout_short_30ticks) * np.array(data['Consensus_Minus_Alpha']))]
 
 
 	kelly_short_2ticks_underdog = [round(x,4) for x in (np.array(1)-np.array(data['Consensus_Minus_Alpha'])) / np.array(payout_short_2ticks) -\
@@ -601,6 +609,11 @@ def scrape(url, alpha, min_number_odds, num_outliers, indicator):
 	kelly_short_10ticks_underdog = [round(x,4) for x in (np.array(1)-np.array(data['Consensus_Minus_Alpha'])) / np.array(payout_short_10ticks) -\
 									np.array(data['Consensus_Minus_Alpha']) / np.array(1)]
 
+	kelly_short_30ticks_underdog = [round(x,4) for x in (np.array(1)-np.array(data['Consensus_Minus_Alpha'])) / np.array(payout_short_30ticks) -\
+									np.array(data['Consensus_Minus_Alpha']) / np.array(1)]
+
+
+
 	kelly_short_2ticks_final = [kelly_short_2ticks_underdog[i] if payout_short_2ticks[i] > 1 else kelly_short_2ticks_favorite[i]
 								for i in range(len(kelly_short_2ticks_favorite))]
 
@@ -609,6 +622,9 @@ def scrape(url, alpha, min_number_odds, num_outliers, indicator):
 
 	kelly_short_10ticks_final = [kelly_short_10ticks_underdog[i] if payout_short_10ticks[i] > 1 else kelly_short_10ticks_favorite[i]
 								for i in range(len(kelly_short_10ticks_favorite))]
+	
+	kelly_short_30ticks_final = [kelly_short_30ticks_underdog[i] if payout_short_30ticks[i] > 1 else kelly_short_30ticks_favorite[i]
+								for i in range(len(kelly_short_30ticks_favorite))]
 	
 	data['Kelly_Short_2ticks'] = [round(x,4) for x in kelly_short_2ticks_final]
 	data['Kelly_Short_5ticks'] = [round(x,4) for x in kelly_short_5ticks_final]
